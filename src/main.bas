@@ -26,3 +26,12 @@ End Sub
 '===============================================================
 ' Launchpad button handlers (called from form events)
 '===============================================================
+' filepath: c:\Users\TheFa\OneDrive\Documents\GitHub\GunthersCatiaWizard\src\main.bas
+' ...existing code...
+
+' Show the interactive docs viewer form
+Public Sub showDocsViewer()
+    DocsViewer.Show
+End Sub
+
+' ...existing code...
