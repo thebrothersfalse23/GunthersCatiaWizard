@@ -14,39 +14,38 @@ Option Explicit
 Public prodDoc As ProductDocument     ' Active ProductDocument
 Public rootProd As Product            ' Root Product of the assembly
 
-'===============================================================
-' Enumerations
-'===============================================================
-'--- [SUGGESTED MODULE: Enums.bas] ---
-Public Enum TraversalMode
-    tmGetUniques = 1            ' unique reference Products (deduped)
-    tmGetParts = 2              ' reserved placeholder (not used by wrappers)
-    tmAssignInstanceData = 3    ' explicit write API (separate from read traversals)
-    tmCollectRefsAll = 4        ' all reference Products (not deduped)
-    tmGetInstances = 5          ' instance Products by kind
-End Enum
-
-' Kind selector for refs/instances
-Public Enum UniqueOutKind
-    uoAll = 0            ' Products first, then Parts
-    uoProductsOnly = 1   ' Products only
-    uoPartsOnly = 2      ' Parts only
-End Enum
 
 '===============================================================
-' Entry Point (guards → init → sample call)
+' Entry Point (guards → init → UI dispatch only)
 '===============================================================
 Sub CATMain()
 
     If Not EnsureActiveProductDocument() Then Exit Sub
 
-    ' Example: count unique reference Products+Parts
-    Dim uniqAll As Collection
-    Set uniqAll = GetUniques(rootProd, uoAll)
-
-    MsgBox "Unique references found: " & CStr(uniqAll.Count), vbInformation, "Gunther's CATIA Wizard"
+    ' Show the Launchpad UI for user to select and run tools
+    Launchpad.Show
 
     ' Keep Main clean. See GunthersCatiaWizard_Docs for full examples & usage.
 
+End Sub
+
+'===============================================================
+' Launchpad button handlers (called from form events)
+'===============================================================
+Public Sub Launchpad_Run()
+    ' Guard: Ensure a valid ProductDocument is active before running any tool
+    If Not EnsureActiveProductDocument() Then
+        MsgBox "No valid CATProduct document is open. Please open a Product and try again.", vbExclamation, "Gunther's Catia Wizard"
+        Exit Sub
+    End If
+    ' TODO: Dispatch selected tool based on UI (placeholder)
+    ' All UI except errors should be handled in a form
+    ' Unload Launchpad after running (optional)
+    Unload Launchpad
+End Sub
+
+Public Sub Launchpad_Cancel()
+    Unload Launchpad
+    End ' Terminates macro execution
 End Sub
 
