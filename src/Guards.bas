@@ -14,12 +14,12 @@ Public Function EnsureActiveProductDocument() As Boolean
     EnsureActiveProductDocument = False
 
     If CATIA.Documents.Count = 0 Then
-        MsgBox "No document open.", vbExclamation, "Gunther's CatIA Wizard"
+        MsgBox "No valid CATProduct document is open. Please open a Product and try again.", vbExclamation, "Gunther's Catia Wizard"
         Exit Function
     End If
 
     If TypeName(CATIA.ActiveDocument) <> "ProductDocument" Then
-        MsgBox "Active document is not a CATProduct.", vbExclamation, "Gunther's CatIA Wizard"
+        MsgBox "No valid CATProduct document is open. Please open a Product and try again.", vbExclamation, "Gunther's Catia Wizard"
         Exit Function
     End If
 

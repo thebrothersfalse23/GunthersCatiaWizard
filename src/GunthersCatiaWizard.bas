@@ -19,25 +19,21 @@ Public rootProd As Product            ' Root Product of the assembly
 ' Entry Point (guards → init → UI dispatch only)
 '===============================================================
 Sub CATMain()
-
     Launchpad.Show
-
     ' Keep Main clean. See GunthersCatiaWizard_Docs for full examples & usage.
-
 End Sub
 
 '===============================================================
 ' Launchpad button handlers (called from form events)
 '===============================================================
-Public Sub Launchpad_Run()
-    ' Guard: Ensure a valid ProductDocument is active before running any tool
-    If Not EnsureActiveProductDocument() Then
-        MsgBox "No valid CATProduct document is open. Please open a Product and try again.", vbExclamation, "Gunther's Catia Wizard"
-        Exit Sub
+Public Sub Launchpad_Cancel()
+    Unload Launchpad
+    End ' Terminates macro execution
+End Sub
     End If
-    ' TODO: Dispatch selected tool based on UI (placeholder)
+    ' Guard: Ensure Design Mode is applied to root product
+    EnsureDesignMode rootProd
     ' All UI except errors should be handled in a form
-    ' Unload Launchpad after running (optional)
     Unload Launchpad
 End Sub
 
