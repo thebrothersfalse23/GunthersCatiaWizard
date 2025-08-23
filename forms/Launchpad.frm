@@ -257,7 +257,7 @@ Private Sub cmdRunSingle_Click()
     prefix = Trim(txtSerialPrefix.Text)
     startOnSelected = (chkStartOnSelected.Value = 1)
     protectRefDocs = (chkProtectRefDocs.Value = 1)
-    Set selectedProduct = GetSelectedProduct() ' You must implement this function to return the selected Product
+    Set selectedProduct = getSelectedProducts(True) ' Returns a Product or Nothing
 
     generateTDSingle selectedProduct, prefix, startOnSelected, protectRefDocs
 End Sub

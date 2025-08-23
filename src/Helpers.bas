@@ -4,11 +4,12 @@
 '          access, key building, and string retrieval on CATIA objects.
 '===============================================================
 
+Private Const CATIA_TYPE_PRODUCT As String = "Product"
 
 '---------------------------------------------------------------
 ' Sub: safeSet
-' Safely sets a property ("Nomenclature", "Name", "Description", "PartNumber", "Revision")
-' on a given object. Ignores errors if the property does not exist.
+'   Safely sets a property ("Nomenclature", "Name", "Description", "PartNumber", "Revision")
+'   on a given object. Ignores errors if the property does not exist.
 '
 ' Parameters:
 '   obj      - The object on which to set the property.
@@ -31,9 +32,9 @@ End Sub
 
 '---------------------------------------------------------------
 ' Function: getPropStr
-' Safely retrieves a string property ("Nomenclature", "Name", "Description", etc.)
-' from a given object. Returns an empty string if the property does not exist
-' or an error occurs.
+'   Safely retrieves a string property ("Nomenclature", "Name", "Description", etc.)
+'   from a given object. Returns an empty string if the property does not exist
+'   or an error occurs.
 '
 ' Parameters:
 '   obj      - The object from which to retrieve the property.
@@ -65,8 +66,8 @@ End Function
 
 '---------------------------------------------------------------
 ' Function: buildRefKey
-' Builds a stable, human-readable key for a reference Product.
-' Default: "PartNumber|DocType"; if Definition exists → "PartNumber|DocType|Definition"
+'   Builds a stable, human-readable key for a reference Product.
+'   Default: "PartNumber|DocType"; if Definition exists → "PartNumber|DocType|Definition"
 '
 ' Parameters:
 '   ref     - The reference Product object.
@@ -91,26 +92,50 @@ Public Function buildRefKey(ByVal ref As Product, ByVal docType As String) As St
 End Function
 
 '---------------------------------------------------------------
-' Function: GetSelectedProduct
-' Returns the currently selected Product in CATIA, or Nothing if not found.
+' Function: getSelectedProducts
+'   Returns selected Product(s) from CATIA.
+'
+'   Parameters:
+'     firstSelection [Boolean] - If True, returns only the first selected Product (as a Product object or Nothing).
+'                                If False, returns all selected Products as a Collection.
+'
+'   Returns:
+'     If firstSelection = True:   Product (or Nothing if none selected or first selection is not a Product)
+'     If firstSelection = False:  Collection of Product objects (may be empty)
+'   Note:
+'     Assumes guards have already validated CATIA, document, and selection state.
 '---------------------------------------------------------------
-Public Function GetSelectedProduct() As Product
-    On Error Resume Next
-    Dim sel As Object
+Public Function getSelectedProducts(Optional ByVal firstSelection As Boolean = False) As Variant
+    Dim sel As Selection
+    Dim prod As Product
+    Dim result As Collection
     Set sel = CATIA.ActiveDocument.Selection
-    If sel Is Nothing Or sel.Count = 0 Then
-        Set GetSelectedProduct = Nothing
-        Exit Function
-    End If
 
-    Dim i As Integer
-    For i = 1 To sel.Count
-        Dim obj As Object
-        Set obj = sel.Item(i).Value
-        If TypeName(obj) = "Product" Then
-            Set GetSelectedProduct = obj
-            Exit Function
+    If firstSelection Then
+        If sel.Count >= 1 Then
+            If TypeName(sel.Item(1).Value) = "Product" Then
+                Set prod = sel.Item(1).Value
+                If Not prod Is Nothing Then
+                    Set getSelectedProducts = prod
+                    Exit Function
+                End If
+            End If
         End If
-    Next i
-    Set GetSelectedProduct = Nothing
+        Set getSelectedProducts = Nothing
+    Else
+        Set result = New Collection
+        Dim j As Integer
+        For j = 1 To sel.Count
+            Set prod = Nothing
+            If TypeName(sel.Item(j).Value) = "Product" Then
+                Set prod = sel.Item(j).Value
+                If Not prod Is Nothing Then
+                    result.Add prod
+                End If
+            End If
+        Next j
+        Set getSelectedProducts = result
+    End If
 End Function
+'---------------------------------------------------------------
+'---------------------------------------------------------------
