@@ -20,21 +20,16 @@ Public rootProd As Product            ' Root Product of the assembly
 '===============================================================
 Sub CATMain()
     Launchpad.Show
-    ' Keep Main clean. See GunthersCatiaWizard_Docs for full examples & usage.
+    ' Keep Main clean. See Docs for full examples & usage.
 End Sub
 
 '===============================================================
 ' Launchpad button handlers (called from form events)
 '===============================================================
-Public Sub Launchpad_Cancel()
-    Unload Launchpad
-    End ' Terminates macro execution
-End Sub
-    End If
-    ' Guard: Ensure Design Mode is applied to root product
-    EnsureDesignMode rootProd
-    ' All UI except errors should be handled in a form
-    Unload Launchpad
+Public Sub Launchpad_Run()
+'Need to populate this. something went wrong and its not handling launchpad_run correctly. 
+'this should run the safeguards.
+
 End Sub
 
 Public Sub Launchpad_Cancel()
