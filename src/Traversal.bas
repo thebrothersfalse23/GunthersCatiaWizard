@@ -23,10 +23,10 @@
 '   - Used internally by all public wrapper functions
 '---------------------------------------------------------------
 
-Private Sub TraverseProduct(ByVal mode As TraversalMode, _
-                            ByVal root As Product, _
-                            Optional ByRef outRefs As Collection, _
-                            Optional ByVal outKind As UniqueOutKind = uoAll)
+Public Sub TraverseProduct(ByVal mode As TraversalMode, _
+                          ByVal root As Product, _
+                          Optional ByRef outRefs As Collection, _
+                          Optional ByVal outKind As UniqueOutKind = uoAll)
 
     If root Is Nothing Then Exit Sub
 

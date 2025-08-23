@@ -1,7 +1,8 @@
-'===============================================================
-' Safe property helpers (late-bound without CallByName)
-'===============================================================
-'--- [SUGGESTED MODULE: Helpers.bas] ---
+===============================================================
+MODULE: Helpers.bas
+PURPOSE: Safe property helpers and utility functions for late-bound property
+         access, key building, and string retrieval on CATIA objects.
+===============================================================
 
 '---------------------------------------------------------------
 ' Sub: SafeSet
@@ -20,7 +21,7 @@
 '   propName - The name of the property to set.
 '   value    - The value to assign to the property.
 '---------------------------------------------------------------
-Private Sub SafeSet(ByVal obj As Object, ByVal propName As String, ByVal value As String)
+Public Sub SafeSet(ByVal obj As Object, ByVal propName As String, ByVal value As String)
     On Error Resume Next
     Select Case propName
         Case "Nomenclature":      obj.Nomenclature = value
@@ -49,7 +50,7 @@ End Sub
 ' Returns:
 '   String   - The value of the specified property, or an empty string on error.
 '---------------------------------------------------------------
-Private Function GetPropStr(ByVal obj As Object, ByVal propName As String) As String
+Public Function GetPropStr(ByVal obj As Object, ByVal propName As String) As String
     On Error Resume Next
     Select Case propName
         Case "Nomenclature":      GetPropStr = obj.Nomenclature
@@ -82,7 +83,7 @@ End Function
 ' Returns:
 '   String  - The constructed key, or "" if PartNumber is empty.
 '---------------------------------------------------------------
-Private Function BuildRefKey(ByVal ref As Product, ByVal docType As String) As String
+Public Function BuildRefKey(ByVal ref As Product, ByVal docType As String) As String
     On Error Resume Next
     Dim pn As String: pn = ref.PartNumber
     Dim defn As String: defn = ref.Definition ' may be empty depending on env
