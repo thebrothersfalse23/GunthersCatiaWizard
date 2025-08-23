@@ -26,14 +26,3 @@ End Sub
 '===============================================================
 ' Launchpad button handlers (called from form events)
 '===============================================================
-Public Sub Launchpad_Run()
-'Need to populate this. something went wrong and its not handling launchpad_run correctly. 
-'this should run the safeguards.
-
-End Sub
-
-Public Sub Launchpad_Cancel()
-    Unload Launchpad
-    End ' Terminates macro execution
-End Sub
-

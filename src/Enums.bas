@@ -1,5 +1,5 @@
 '===============================================================
-' MODULE: Enums.bas
+' MODULE: enums.bas
 ' PURPOSE: Enumerations for traversal and output kind.
 '===============================================================
 
@@ -9,7 +9,7 @@ Option Explicit
 ' Enumerations for traversal and output kind
 '===============================================================
 
-Public Enum TraversalMode
+Public Enum traversalMode
     tmGetUniques = 1            ' unique reference Products (deduped)
     tmGetParts = 2              ' reserved placeholder (not used by wrappers)
     tmAssignInstanceData = 3    ' explicit write API (separate from read traversals)
@@ -17,7 +17,7 @@ Public Enum TraversalMode
     tmGetInstances = 5          ' instance Products by kind
 End Enum
 
-Public Enum UniqueOutKind
+Public Enum uniqueOutKind
     uoAll = 0            ' Products first, then Parts
     uoProductsOnly = 1   ' Products only
     uoPartsOnly = 2      ' Parts only

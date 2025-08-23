@@ -1,20 +1,20 @@
 '===============================================================
-' MODULE: Traversal.bas
+' MODULE: traversal.bas
 ' PURPOSE: Implements the core iterative queue-based traversal logic
 '          for CATIA Product structures. Handles unique/reference
 '          collection, instance collection, and optional write API.
 '          Used by all wrapper functions for assembly/product traversal.
 '===============================================================
 
-' TraverseProduct – Iterative queue-based traversal
+' traverseProduct – Iterative queue-based traversal
 '---------------------------------------------------------------
-' Private Sub TraverseProduct(mode, root, [outRefs], [outKind])
+' Private Sub traverseProduct(mode, root, [outRefs], [outKind])
 '
 ' Parameters:
-'   mode    - TraversalMode enum, determines traversal behavior
+'   mode    - traversalMode enum, determines traversal behavior
 '   root    - Starting Product object
 '   outRefs - [Optional] Collection to receive output (refs or instances)
-'   outKind - [Optional] UniqueOutKind enum, controls output filtering
+'   outKind - [Optional] uniqueOutKind enum, controls output filtering
 '
 ' Behavior:
 '   - Breadth-first traversal of the product structure
@@ -23,15 +23,24 @@
 '   - Used internally by all public wrapper functions
 '---------------------------------------------------------------
 
-Public Sub TraverseProduct(ByVal mode As TraversalMode, _
+' Helper to copy one collection into another
+Private Sub copyColInto(ByRef dst As Collection, ByVal src As Collection)
+    If src Is Nothing Then Exit Sub
+    Dim k As Long
+    For k = 1 To src.Count
+        dst.Add src.Item(k)
+    Next
+End Sub
+
+Public Sub traverseProduct(ByVal mode As traversalMode, _
                           ByVal root As Product, _
                           Optional ByRef outRefs As Collection, _
-                          Optional ByVal outKind As UniqueOutKind = uoAll)
+                          Optional ByVal outKind As uniqueOutKind = uoAll)
 
     If root Is Nothing Then Exit Sub
 
     ' Ensure Design Mode for consistent child access (no prompts; fast path)
-    EnsureDesignMode root
+    ensureDesignMode root
 
     ' Breadth-first traversal using a simple Collection as a queue.
     Dim q As Collection: Set q = New Collection
@@ -63,6 +72,12 @@ Public Sub TraverseProduct(ByVal mode As TraversalMode, _
         Set instPart = New Collection
     End If
 
+    ' Ensure all collections are initialized to avoid object errors
+    If prodRefs Is Nothing Then Set prodRefs = New Collection
+    If partRefs Is Nothing Then Set partRefs = New Collection
+    If instProd Is Nothing Then Set instProd = New Collection
+    If instPart Is Nothing Then Set instPart = New Collection
+
     Do While q.Count > 0
         Set current = q(1): q.Remove 1
         If Not current Is Nothing Then
@@ -86,7 +101,7 @@ Public Sub TraverseProduct(ByVal mode As TraversalMode, _
                     Case tmGetUniques
                         ' Build dedupe key for the reference product
                         Dim key As String
-                        key = BuildRefKey(ref, dt) ' e.g., "PartNumber|DocType|Definition?"
+                        key = buildRefKey(ref, dt) ' e.g., "PartNumber|DocType|Definition?"
                         If Len(key) > 0 Then
                             If Not seen.Exists(key) Then
                                 seen.Add key, True
@@ -108,9 +123,9 @@ Public Sub TraverseProduct(ByVal mode As TraversalMode, _
 
                     Case tmAssignInstanceData
                         ' Be explicit: instance-side and reference-side edits
-                        SafeSet current, "Description", current.Name
-                        If Len(GetPropStr(ref, "Nomenclature")) = 0 Then SafeSet ref, "Nomenclature", current.Name
-                        SafeSet current, "Name", ref.PartNumber   ' rename instance to ref PartNumber
+                        safeSet current, "Description", current.Name
+                        If Len(getPropStr(ref, "Nomenclature")) = 0 Then safeSet ref, "Nomenclature", current.Name
+                        safeSet current, "Name", ref.PartNumber   ' rename instance to ref PartNumber
 
                     Case tmGetInstances
                         ' Bucket the INSTANCE by its reference document type
@@ -128,51 +143,42 @@ Public Sub TraverseProduct(ByVal mode As TraversalMode, _
             End If
 
 AfterModeWork:
-            ' Enqueue children (if any). Leaf parts return Products.Count = 0.
+            ' Enqueue children (BFS)
+            On Error Resume Next
             Set kids = current.Products
-            If Not kids Is Nothing Then
+            If Err.Number = 0 And Not kids Is Nothing Then
                 For i = 1 To kids.Count
                     q.Add kids.Item(i)
-                Next i
+                Next
             End If
+            Err.Clear
+            On Error GoTo 0
         End If
     Loop
 
     ' Assemble outputs based on mode and outKind
-    Dim result As Collection
-
-    Select Case mode
-
-        Case tmGetUniques, tmCollectRefsAll
-            Set result = New Collection
-            Select Case outKind
-                Case uoProductsOnly
-                    For i = 1 To prodRefs.Count: result.Add prodRefs.Item(i): Next i
-                Case uoPartsOnly
-                    For i = 1 To partRefs.Count: result.Add partRefs.Item(i): Next i
-                Case Else ' uoAll: Products first, then Parts
-                    For i = 1 To prodRefs.Count: result.Add prodRefs.Item(i): Next i
-                    For i = 1 To partRefs.Count: result.Add partRefs.Item(i): Next i
-            End Select
-
-        Case tmGetInstances
-            Set result = New Collection
-            Select Case outKind
-                Case uoProductsOnly
-                    For i = 1 To instProd.Count: result.Add instProd.Item(i): Next i
-                Case uoPartsOnly
-                    For i = 1 To instPart.Count: result.Add instPart.Item(i): Next i
-                Case Else ' uoAll: Products first, then Parts
-                    For i = 1 To instProd.Count: result.Add instProd.Item(i): Next i
-                    For i = 1 To instPart.Count: result.Add instPart.Item(i): Next i
-            End Select
-
-        Case Else
-            ' Modes with no output contract: ignore
-    End Select
-
-    If Not result Is Nothing Then
-        Set outRefs = result
+    If mode = tmGetUniques Or mode = tmCollectRefsAll Then
+        If outRefs Is Nothing Then Set outRefs = New Collection
+        Select Case outKind
+            Case uoProductsOnly
+                copyColInto outRefs, prodRefs
+            Case uoPartsOnly
+                copyColInto outRefs, partRefs
+            Case Else ' uoAll: Products first, then Parts
+                copyColInto outRefs, prodRefs
+                copyColInto outRefs, partRefs
+        End Select
+    ElseIf mode = tmGetInstances Then
+        If outRefs Is Nothing Then Set outRefs = New Collection
+        Select Case outKind
+            Case uoProductsOnly
+                copyColInto outRefs, instProd
+            Case uoPartsOnly
+                copyColInto outRefs, instPart
+            Case Else
+                copyColInto outRefs, instProd
+                copyColInto outRefs, instPart
+        End Select
     End If
 End Sub
 

@@ -1,5 +1,5 @@
 '===============================================================
-' MODULE: Docs.bas
+' MODULE: docs.bas
 ' PURPOSE: Documentation and usage examples for Gunther's Catia Wizard.
 '          Keeps CATMain clean and provides reference for API usage.
 '===============================================================
@@ -33,7 +33,7 @@
 ' NOTES (optional)
 '   - [Any additional notes, contracts, or conventions]
 ' -------------------------------------------------------------------------
-Public Sub GunthersCatiaWizard_Docs()
+Public Sub gunthersCatiaWizardDocs()
     ' -------------------------------------------------------------------------
     ' PUBLIC API QUICK REFERENCE
     '   - GetProducts(rootProd As Product, [unique As Boolean = False]) As Collection

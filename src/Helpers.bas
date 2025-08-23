@@ -1,19 +1,13 @@
 '===============================================================
-' MODULE: Helpers.bas
+' MODULE: helpers.bas
 ' PURPOSE: Safe property helpers and utility functions for late-bound property
 '          access, key building, and string retrieval on CATIA objects.
 '===============================================================
 
-'---------------------------------------------------------------
-' Sub: SafeSet
-' Safely sets a string property ("Nomenclature", "Name", or "Description")
-' on a given object. Ignores errors if the property does not exist.
-'---------------------------------------------------------------
-
 
 '---------------------------------------------------------------
-' Sub: SafeSet
-' Safely sets a property ("Nomenclature", "Name", "Description", "PartNumber", "Definition", "Revision", "ReferenceProduct")
+' Sub: safeSet
+' Safely sets a property ("Nomenclature", "Name", "Description", "PartNumber", "Revision")
 ' on a given object. Ignores errors if the property does not exist.
 '
 ' Parameters:
@@ -21,24 +15,22 @@
 '   propName - The name of the property to set.
 '   value    - The value to assign to the property.
 '---------------------------------------------------------------
-Public Sub SafeSet(ByVal obj As Object, ByVal propName As String, ByVal value As String)
+Public Sub safeSet(ByVal obj As Object, ByVal propName As String, ByVal value As String)
     On Error Resume Next
     Select Case propName
         Case "Nomenclature":      obj.Nomenclature = value
         Case "Name":              obj.Name = value
         Case "Description":       obj.Description = value
         Case "PartNumber":        obj.PartNumber = value
-        Case "Definition":        obj.Definition = value
         Case "Revision":          obj.Revision = value
-        Case "ReferenceProduct":  obj.ReferenceProduct = value
+        ' "Definition" and "ReferenceProduct" are read-only for most Product objects; do not set
     End Select
     Err.Clear
     On Error GoTo 0
 End Sub
 
-
 '---------------------------------------------------------------
-' Function: GetPropStr
+' Function: getPropStr
 ' Safely retrieves a string property ("Nomenclature", "Name", "Description", etc.)
 ' from a given object. Returns an empty string if the property does not exist
 ' or an error occurs.
@@ -50,29 +42,29 @@ End Sub
 ' Returns:
 '   String   - The value of the specified property, or an empty string on error.
 '---------------------------------------------------------------
-Public Function GetPropStr(ByVal obj As Object, ByVal propName As String) As String
+Public Function getPropStr(ByVal obj As Object, ByVal propName As String) As String
     On Error Resume Next
     Select Case propName
-        Case "Nomenclature":      GetPropStr = obj.Nomenclature
-        Case "Name":              GetPropStr = obj.Name
-        Case "Description":       GetPropStr = obj.Description
-        Case "PartNumber":        GetPropStr = obj.PartNumber
-        Case "Definition":        GetPropStr = obj.Definition
-        Case "Revision":          GetPropStr = obj.Revision
-        Case "ReferenceProduct":  GetPropStr = obj.ReferenceProduct
-        Case Else:                GetPropStr = ""
+        Case "Nomenclature":      getPropStr = obj.Nomenclature
+        Case "Name":              getPropStr = obj.Name
+        Case "Description":       getPropStr = obj.Description
+        Case "PartNumber":        getPropStr = obj.PartNumber
+        Case "Definition":        getPropStr = obj.Definition
+        Case "Revision":          getPropStr = obj.Revision
+        Case "ReferenceProduct":  getPropStr = obj.ReferenceProduct
+        Case Else:                getPropStr = ""
     End Select
-    If Err.Number <> 0 Then GetPropStr = ""
+    If Err.Number <> 0 Then getPropStr = ""
     Err.Clear
     On Error GoTo 0
 End Function
 
 '===============================================================
-' BuildRefKey – Builds a stable, human-readable key for a reference
+' buildRefKey – Builds a stable, human-readable key for a reference
 '===============================================================
 
 '---------------------------------------------------------------
-' Function: BuildRefKey
+' Function: buildRefKey
 ' Builds a stable, human-readable key for a reference Product.
 ' Default: "PartNumber|DocType"; if Definition exists → "PartNumber|DocType|Definition"
 '
@@ -83,17 +75,42 @@ End Function
 ' Returns:
 '   String  - The constructed key, or "" if PartNumber is empty.
 '---------------------------------------------------------------
-Public Function BuildRefKey(ByVal ref As Product, ByVal docType As String) As String
+Public Function buildRefKey(ByVal ref As Product, ByVal docType As String) As String
     On Error Resume Next
-    Dim pn As String: pn = ref.PartNumber
-    Dim defn As String: defn = ref.Definition ' may be empty depending on env
+    Dim pn As String: pn = Trim$(ref.PartNumber)
+    Dim defn As String: defn = Trim$(ref.Definition)
     On Error GoTo 0
 
     If Len(pn) = 0 Then
-        BuildRefKey = ""
+        buildRefKey = ""
     ElseIf Len(defn) > 0 Then
-        BuildRefKey = pn & "|" & docType & "|" & defn
+        buildRefKey = UCase$(pn) & "|" & docType & "|" & UCase$(defn)
     Else
-        BuildRefKey = pn & "|" & docType
+        buildRefKey = UCase$(pn) & "|" & docType
     End If
+End Function
+
+'---------------------------------------------------------------
+' Function: GetSelectedProduct
+' Returns the currently selected Product in CATIA, or Nothing if not found.
+'---------------------------------------------------------------
+Public Function GetSelectedProduct() As Product
+    On Error Resume Next
+    Dim sel As Object
+    Set sel = CATIA.ActiveDocument.Selection
+    If sel Is Nothing Or sel.Count = 0 Then
+        Set GetSelectedProduct = Nothing
+        Exit Function
+    End If
+
+    Dim i As Integer
+    For i = 1 To sel.Count
+        Dim obj As Object
+        Set obj = sel.Item(i).Value
+        If TypeName(obj) = "Product" Then
+            Set GetSelectedProduct = obj
+            Exit Function
+        End If
+    Next i
+    Set GetSelectedProduct = Nothing
 End Function
