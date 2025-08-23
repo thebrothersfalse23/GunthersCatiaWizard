@@ -10,6 +10,3 @@ Public Sub generateTDSingle(selectedProduct As Product, prefix As String, startO
     ' Use createNewProduct to determine operation mode
 End Sub
 
-Public Sub generateTDSequential()
-    ' ...sequential tool design logic goes here...
-End Sub
