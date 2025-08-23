@@ -1,78 +1,195 @@
-===============================================================
-MODULE: Docs.bas
-PURPOSE: Documentation and usage examples for Gunther's Catia Wizard.
-         Keeps CATMain clean and provides reference for API usage.
-===============================================================
+'===============================================================
+' MODULE: Docs.bas
+' PURPOSE: Documentation and usage examples for Gunther's Catia Wizard.
+'          Keeps CATMain clean and provides reference for API usage.
+'===============================================================
+' -------------------------------------------------------------------------
+' DOCUMENTATION FORMAT (for each public function/wrapper)
+' -------------------------------------------------------------------------
+' FunctionName([arg1 As Type][, arg2 As Type ...]) [As ReturnType]
+'   Description:
+'     [Short summary of what the function does and any important notes.]
+'   Acceptable args:
+'     arg1 [Type] - [Description of argument and valid values]
+'     arg2 [Type, Optional] - [Description and default if any]
+'     ...
+'   Usage:
+'     [Short code snippet showing typical usage]
+'
+' (Repeat for each function/wrapper)
+'
+' Enumerations:
+'   EnumName: value1, value2, ...
+'
+' -------------------------------------------------------------------------
+' UI USAGE (if applicable)
+'   - [Describe how the UI interacts with this function/module]
+'
+' -------------------------------------------------------------------------
+' UNDER THE HOOD (optional)
+'   - [Describe internal mechanics, contracts, or design notes]
+'
+' -------------------------------------------------------------------------
+' NOTES (optional)
+'   - [Any additional notes, contracts, or conventions]
+' -------------------------------------------------------------------------
 Public Sub GunthersCatiaWizard_Docs()
+    ' -------------------------------------------------------------------------
+    ' PUBLIC API QUICK REFERENCE
+    '   - GetProducts(rootProd As Product, [unique As Boolean = False]) As Collection
+    '   - GetParts(rootProd As Product, [unique As Boolean = False]) As Collection
+    '   - GetUniques(rootProd As Product, [kind As UniqueOutKind = uoAll]) As Collection
+    '   - GetInstances(rootProd As Product, [kind As UniqueOutKind = uoAll]) As Collection
+    '   - SafeSet(obj As Object, propName As String, value As String)
+    '   - GetPropStr(obj As Object, propName As String) As String
+    '   - BuildRefKey(ref As Product, docType As String) As String
+    '   - EnsureActiveProductDocument() As Boolean
+    '   - EnsureDesignMode(root As Product)
+    '   - TraverseProduct(mode As TraversalMode, root As Product, [ByRef outRefs As Collection], [outKind As UniqueOutKind = uoAll])
+    '
+    ' ENUMS:
+    '   TraversalMode: tmGetUniques, tmGetParts, tmAssignInstanceData, tmCollectRefsAll, tmGetInstances
+    '   UniqueOutKind: uoAll, uoProductsOnly, uoPartsOnly
     ' -------------------------------------------------------------------------
     '' WRAPPER FUNCTION USAGE (all return Collection unless noted)
     ''
     '' GetProducts(rootProd As Product, [unique As Boolean = False])  → reference Products only
-    ''   Dim prodsAll As Collection
-    ''   Set prodsAll = GetProducts(rootProd, False)  ' all refs (not deduped)
-    ''   Dim prodsUniq As Collection
-    ''   Set prodsUniq = GetProducts(rootProd, True)  ' uniques only
+    ''   Description:
+    ''     Returns a Collection of reference Products (Products only) in the assembly.
+    ''     Optionally deduplicates by reference.
+    ''   Acceptable args:
+    ''     rootProd [Product] - root product to traverse
+    ''     unique   [Boolean, Optional] - True for unique refs, False for all (default: False)
+    ''   Usage:
+    ''     Dim prodsAll As Collection
+    ''     Set prodsAll = GetProducts(rootProd, False)
+    ''     Dim prodsUniq As Collection
+    ''     Set prodsUniq = GetProducts(rootProd, True)
     ''
     '' GetParts(rootProd As Product, [unique As Boolean = False])      → reference Parts only
-    ''   Dim partsAll As Collection
-    ''   Set partsAll = GetParts(rootProd, False)     ' all refs (not deduped)
-    ''   Dim partsUniq As Collection
-    ''   Set partsUniq = GetParts(rootProd, True)     ' uniques only
+    ''   Description:
+    ''     Returns a Collection of reference Parts (Parts only) in the assembly.
+    ''     Optionally deduplicates by reference.
+    ''   Acceptable args:
+    ''     rootProd [Product] - root product to traverse
+    ''     unique   [Boolean, Optional] - True for unique refs, False for all (default: False)
+    ''   Usage:
+    ''     Dim partsAll As Collection
+    ''     Set partsAll = GetParts(rootProd, False)
+    ''     Dim partsUniq As Collection
+    ''     Set partsUniq = GetParts(rootProd, True)
     ''
     '' GetUniques(rootProd As Product, [kind As UniqueOutKind = uoAll]) → unique refs (ordered)
-    ''   Dim uniqAll As Collection
-    ''   Set uniqAll = GetUniques(rootProd, uoAll)            ' Products→Parts
-    ''   Dim uniqProds As Collection
-    ''   Set uniqProds = GetUniques(rootProd, uoProductsOnly) ' only Products
-    ''   Dim uniqParts As Collection
-    ''   Set uniqParts = GetUniques(rootProd, uoPartsOnly)    ' only Parts
+    ''   Description:
+    ''     Returns a Collection of unique reference Products and/or Parts, ordered with Products first.
+    ''     Filtering by kind is available.
+    ''   Acceptable args:
+    ''     rootProd [Product] - root product to traverse
+    ''     kind     [UniqueOutKind, Optional] - uoAll, uoProductsOnly, uoPartsOnly (default: uoAll)
+    ''   Usage:
+    ''     Dim uniqAll As Collection
+    ''     Set uniqAll = GetUniques(rootProd, uoAll)
+    ''     Dim uniqProds As Collection
+    ''     Set uniqProds = GetUniques(rootProd, uoProductsOnly)
+    ''     Dim uniqParts As Collection
+    ''     Set uniqParts = GetUniques(rootProd, uoPartsOnly)
     ''
     '' GetInstances(rootProd As Product, [kind As UniqueOutKind = uoAll]) → instance Products
-    ''   Dim instAll As Collection
-    ''   Set instAll = GetInstances(rootProd, uoAll)            ' Products→Parts
-    ''   Dim instProds As Collection
-    ''   Set instProds = GetInstances(rootProd, uoProductsOnly) ' only product instances
-    ''   Dim instParts As Collection
-    ''   Set instParts = GetInstances(rootProd, uoPartsOnly)    ' only part instances
+    ''   Description:
+    ''     Returns a Collection of instance Products (not references) in the assembly.
+    ''     Filtering by kind is available.
+    ''   Acceptable args:
+    ''     rootProd [Product] - root product to traverse
+    ''     kind     [UniqueOutKind, Optional] - uoAll, uoProductsOnly, uoPartsOnly (default: uoAll)
+    ''   Usage:
+    ''     Dim instAll As Collection
+    ''     Set instAll = GetInstances(rootProd, uoAll)
+    ''     Dim instProds As Collection
+    ''     Set instProds = GetInstances(rootProd, uoProductsOnly)
+    ''     Dim instParts As Collection
+    ''     Set instParts = GetInstances(rootProd, uoPartsOnly)
     ''
     '' SafeSet(obj As Object, propName As String, value As String)
-    ''   ' Safely sets a property if it exists on the object.
+    ''   Description:
+    ''     Safely sets a property (e.g., "Description", "Name", etc.) on a CATIA object if it exists.
+    ''     Ignores errors if the property is not present.
+    ''   Acceptable args:
+    ''     obj      [Object] - object to set property on
+    ''     propName [String] - property name ("Nomenclature", "Name", "Description", "PartNumber", "Definition", "Revision", "ReferenceProduct")
+    ''     value    [String] - value to assign
+    ''   Usage:
+    ''     SafeSet currentProduct, "Description", "MADE BY AMCO"
     ''
     '' GetPropStr(obj As Object, propName As String) As String
-    ''   ' Safely gets a property value as string, or "" if not present.
+    ''   Description:
+    ''     Safely retrieves a property value as a string from a CATIA object.
+    ''     Returns "" if the property does not exist or on error.
+    ''   Acceptable args:
+    ''     obj      [Object] - object to get property from
+    ''     propName [String] - property name ("Nomenclature", "Name", "Description", "PartNumber", "Definition", "Revision", "ReferenceProduct")
+    ''   Usage:
+    ''     Dim desc As String
+    ''     desc = GetPropStr(currentProduct, "Description")
     ''
     '' BuildRefKey(ref As Product, docType As String) As String
-    ''   ' Returns a stable key for a reference Product (PartNumber|DocType|Definition?)
+    ''   Description:
+    ''     Builds a stable, human-readable key for a reference Product.
+    ''     Default: "PartNumber|DocType"; if Definition exists → "PartNumber|DocType|Definition"
+    ''   Acceptable args:
+    ''     ref     [Product] - reference Product object
+    ''     docType [String]  - "ProductDocument" or "PartDocument"
+    ''   Usage:
+    ''     Dim key As String
+    ''     key = BuildRefKey(refProduct, "ProductDocument")
     ''
     '' EnsureActiveProductDocument() As Boolean
-    ''   ' Ensures a ProductDocument is open and active, sets globals prodDoc/rootProd.
+    ''   Description:
+    ''     Ensures a ProductDocument is open and active in CATIA.
+    ''     Sets globals prodDoc/rootProd if successful.
+    ''     Returns True if valid, False otherwise.
+    ''   Acceptable args: none
+    ''   Usage:
+    ''     If Not EnsureActiveProductDocument() Then Exit Sub
     ''
     '' EnsureDesignMode(root As Product)
-    ''   ' Applies Design Mode to a Product for consistent traversal.
+    ''   Description:
+    ''     Applies Design Mode to a Product for consistent traversal.
+    ''     No effect if already in Design Mode.
+    ''   Acceptable args:
+    ''     root [Product] - product to apply Design Mode to
+    ''   Usage:
+    ''     EnsureDesignMode rootProd
     ''
     '' TraverseProduct(mode As TraversalMode, root As Product, [ByRef outRefs As Collection], [outKind As UniqueOutKind = uoAll])
-    ''   ' Core traversal logic, used by all wrappers.
+    ''   Description:
+    ''     Core traversal logic for all wrappers.
+    ''     Iterative BFS queue, not called directly by most users.
+    ''   Acceptable args:
+    ''     mode    [TraversalMode] - tmGetUniques, tmGetParts, tmAssignInstanceData, tmCollectRefsAll, tmGetInstances
+    ''     root    [Product]       - root product to traverse
+    ''     outRefs [Collection, Optional, ByRef] - receives output
+    ''     outKind [UniqueOutKind, Optional]     - uoAll, uoProductsOnly, uoPartsOnly (default: uoAll)
+    ''   Usage (advanced):
+    ''     Dim outRefs As Collection
+    ''     TraverseProduct tmGetUniques, rootProd, outRefs, uoAll
     ''
     '' Enumerations:
     ''   TraversalMode: tmGetUniques, tmGetParts, tmAssignInstanceData, tmCollectRefsAll, tmGetInstances
     ''   UniqueOutKind: uoAll, uoProductsOnly, uoPartsOnly
     ''
     '' -------------------------------------------------------------------------
-    '' EXAMPLE USE-CASE (pattern)
+    '' UI USAGE (Launchpad)
     ''
-    '' Public Sub ExampleOfUseCase(inputProd As Product)
-    ''     Dim prodsToRename As Collection
-    ''     Set prodsToRename = GetInstances(inputProd, uoProductsOnly)
-    ''
-    ''     Dim i As Long, current As Product
-    ''     For i = 1 To prodsToRename.Count
-    ''         Set current = prodsToRename.Item(i)
-    ''         ' If your CATIA build exposes DescriptionInst, set it here.
-    ''         ' Some environments use Description or other instance fields.
-    ''         ' Adjust the property name to your deployment if needed.
-    ''         SafeSet current, "Description", "MADE BY AMCO"
-    ''     Next i
-    '' End Sub
+    '' - All UI is handled in a single form: Launchpad.frm.
+    '' - Launchpad uses an SSTab control to switch between:
+    ''     • Home tab (instructions, Run/Cancel)
+    ''     • Single Tool Design tab
+    ''     • Sequential Tool Design tab
+    '' - Only the Home tab or the tool design tabs are visible at a time.
+    ''     • After clicking "Run", only tool design tabs are shown.
+    ''     • "Back" returns to Home and hides tool design tabs.
+    '' - All navigation and tab visibility is managed in Launchpad.frm code.
+    '' - No other forms are used; generateTD.frm is removed.
     ''
     '' -------------------------------------------------------------------------
     '' UNDER THE HOOD

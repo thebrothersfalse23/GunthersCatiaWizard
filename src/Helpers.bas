@@ -1,8 +1,8 @@
-===============================================================
-MODULE: Helpers.bas
-PURPOSE: Safe property helpers and utility functions for late-bound property
-         access, key building, and string retrieval on CATIA objects.
-===============================================================
+'===============================================================
+' MODULE: Helpers.bas
+' PURPOSE: Safe property helpers and utility functions for late-bound property
+'          access, key building, and string retrieval on CATIA objects.
+'===============================================================
 
 '---------------------------------------------------------------
 ' Sub: SafeSet

@@ -1,6 +1,6 @@
 '===============================================================
-' Module: Traversal.bas
-' Purpose: Implements the core iterative queue-based traversal logic
+' MODULE: Traversal.bas
+' PURPOSE: Implements the core iterative queue-based traversal logic
 '          for CATIA Product structures. Handles unique/reference
 '          collection, instance collection, and optional write API.
 '          Used by all wrapper functions for assembly/product traversal.

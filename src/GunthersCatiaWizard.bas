@@ -1,9 +1,9 @@
-===============================================================
-MODULE: GunthersCatiaWizard.bas
-PURPOSE: Main entry point and orchestrator for Gunther's Catia Wizard macro.
-         Initializes globals, exposes entry point, and demonstrates usage.
-         See Docs.bas for API documentation and usage examples.
-===============================================================
+'===============================================================
+' MODULE: GunthersCatiaWizard.bas
+' PURPOSE: Main entry point and orchestrator for Gunther's Catia Wizard macro.
+'          Initializes globals, exposes entry point, and demonstrates usage.
+'          See Docs.bas for API documentation and usage examples.
+'===============================================================
 
 Option Explicit
 

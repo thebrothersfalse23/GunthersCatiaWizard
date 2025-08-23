@@ -1,8 +1,8 @@
-===============================================================
-MODULE: Guards.bas
-PURPOSE: Provides document and work-mode guard routines for CATIA macros.
-         Ensures correct document type and design mode for safe traversal.
-===============================================================
+'===============================================================
+' MODULE: Guards.bas
+' PURPOSE: Provides document and work-mode guard routines for CATIA macros.
+'          Ensures correct document type and design mode for safe traversal.
+'===============================================================
 Public Sub EnsureDesignMode(ByVal root As Product)
     On Error Resume Next
     root.ApplyWorkMode DESIGN_MODE
