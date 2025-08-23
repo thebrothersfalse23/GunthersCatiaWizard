@@ -1,56 +1,52 @@
-
-'===============================================================
-' FORM: Launchpad.frm
-' PURPOSE: Main GUI for Gunther's Catia Wizard. Provides buttons
-'          to list unique parts/products and rename instances.
-'===============================================================
-
-Private Sub cmdListParts_Click()
-    If Not EnsureActiveProductDocument() Then
-        lblStatus.Caption = "No active CATProduct document."
-        Exit Sub
-    End If
-    Dim parts As Collection
-    Set parts = GetParts(rootProd, True)
-    lstOutput.Clear
-    Dim i As Long
-    For i = 1 To parts.Count
-        lstOutput.AddItem parts(i).PartNumber
-    Next i
-    lblStatus.Caption = "Listed unique parts."
-End Sub
-
-Private Sub cmdListProducts_Click()
-    If Not EnsureActiveProductDocument() Then
-        lblStatus.Caption = "No active CATProduct document."
-        Exit Sub
-    End If
-    Dim prods As Collection
-    Set prods = GetProducts(rootProd, True)
-    lstOutput.Clear
-    Dim i As Long
-    For i = 1 To prods.Count
-        lstOutput.AddItem prods(i).PartNumber
-    Next i
-    lblStatus.Caption = "Listed unique products."
-End Sub
-
-Private Sub cmdRenameInstances_Click()
-    If Not EnsureActiveProductDocument() Then
-        lblStatus.Caption = "No active CATProduct document."
-        Exit Sub
-    End If
-    Dim prodsToRename As Collection
-    Set prodsToRename = GetInstances(rootProd, uoProductsOnly)
-    Dim i As Long, current As Product
-    For i = 1 To prodsToRename.Count
-        Set current = prodsToRename.Item(i)
-        SafeSet current, "Description", "MADE BY AMCO"
-    Next i
-    lblStatus.Caption = "Renamed all product instances."
-End Sub
-
-Private Sub UserForm_Initialize()
-    lstOutput.Clear
-    lblStatus.Caption = "Ready."
-End Sub
+VERSION 5.00
+Begin VB.Form Launchpad 
+    Caption         =   "Gunther's Catia Wizard"
+    ClientHeight    =   4200
+    ClientLeft      =   60
+    ClientTop       =   345
+    ClientWidth     =   6000
+    LinkTopic       =   "Launchpad"
+    ScaleHeight     =   4200
+    ScaleWidth      =   6000
+    StartUpPosition =   1  'CenterOwner
+    Font.Name       =   "Segoe UI"
+    Font.Size       =   10
+    Begin VB.Label lblTitle
+        Caption         =   "Gunther's Catia Wizard"
+        Font.Size       =   16
+        Font.Bold       =   -1  'True
+        Height          =   480
+        Left            =   0
+        Top             =   120
+        Width           =   6000
+        Alignment       =   2  'Center
+    End
+    Begin VB.Label lblInstructions
+        Caption         =   "Welcome! To use this wizard:" & vbCrLf & _
+                                 "• Open a CATProduct document in CATIA." & vbCrLf & _
+                                 "• Ensure the assembly is fully loaded (Design Mode recommended)." & vbCrLf & _
+                                 "• Save your work before running tools." & vbCrLf & _
+                                 "• Click 'Run' to begin or 'Cancel' to exit."
+        Height          =   900
+        Left            =   360
+        Top             =   720
+        Width           =   5280
+        Alignment       =   1  'Right Justify
+    End
+    Begin VB.CommandButton btnRun
+        Caption         =   "Run"
+        Height          =   420
+        Left            =   1800
+        Top             =   2000
+        Width           =   1000
+        Enabled         =   True
+    End
+    Begin VB.CommandButton btnCancel
+        Caption         =   "Cancel"
+        Height          =   420
+        Left            =   3200
+        Top             =   2000
+        Width           =   1000
+        Enabled         =   True
+    End
+End
