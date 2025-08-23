@@ -50,6 +50,20 @@ Public Sub GunthersCatiaWizard_Docs()
     ' ENUMS:
     '   TraversalMode: tmGetUniques, tmGetParts, tmAssignInstanceData, tmCollectRefsAll, tmGetInstances
     '   UniqueOutKind: uoAll, uoProductsOnly, uoPartsOnly
+    '
+    ' GLOBALS:
+    '   - prodDoc [ProductDocument]: Set by EnsureActiveProductDocument, reused as the active document.
+    '   - rootProd [Product]: Set by EnsureActiveProductDocument, reused as the root product for traversal.
+    '
+    ' BEHAVIOR TOGGLES:
+    '   - ForceDesignMode [Boolean, default True]: If enabled, ApplyWorkMode DESIGN_MODE before traversal.
+    '   - IncludeDefinitionInKey [Boolean, default True]: If enabled, include ref.Definition in uniqueness key.
+    '
+    ' ERROR HANDLING:
+    '   - All helpers and traversal use scoped On Error Resume Next, clearing errors immediately after fragile COM calls.
+    '
+    ' EXTENDING:
+    '   - See .github/instructions/copilotBrief.instructions.md for the extension recipe and coding rules.
     ' -------------------------------------------------------------------------
     '' WRAPPER FUNCTION USAGE (all return Collection unless noted)
     ''
@@ -212,5 +226,6 @@ Public Sub GunthersCatiaWizard_Docs()
     ''   - Design Mode is applied up-front for consistent traversal depth.
     ''   - UniqueOutKind: uoAll, uoProductsOnly, uoPartsOnly (enum for filtering).
     ''   - All collections are 1-based (VBA default).
-    '' -------------------------------------------------------------------------
+    '
+    ' -------------------------------------------------------------------------
 End Sub
