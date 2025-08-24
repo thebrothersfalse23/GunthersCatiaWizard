@@ -17,7 +17,7 @@ Option Explicit
 '   Throws error if selection is invalid or has no children.
 '---------------------------------------------------------------
 
-Public Sub generateTDSingle(selectedProduct As Product, prefix As String, startOnSelected As Boolean, protectRefDocs As Boolean, createNewProduct As Boolean)
+Public Sub generateTDSingle(selectedProduct As Product, prefix As String, startOnSelected As Boolean, protectRefDocs As Boolean, createNewProduct As Boolean, Optional template As Product = Nothing)
     On Error GoTo errHandler
     ' Assumes all guards (including children) have already been checked by UI/runner
 
@@ -74,6 +74,20 @@ Public Sub generateTDSingle(selectedProduct As Product, prefix As String, startO
 
         safeSet item, "PartNumber", newName
         safeSet item, "Name", newName
+
+        ' If template is provided, copy non-blank properties from template Product to item
+        If Not template Is Nothing Then
+            Dim propList As Variant
+            propList = Array("Definition", "Revision", "Nomenclature", "Source", "Description")
+            Dim propName As Variant
+            For Each propName In propList
+                Dim val As String
+                val = getPropStr(template, propName)
+                If Len(Trim$(val)) > 0 Then
+                    safeSet item, propName, val
+                End If
+            Next propName
+        End If
     Next i
 
     MsgBox "Single tool design complete!", vbInformation, "Gunther's Catia Wizard"
