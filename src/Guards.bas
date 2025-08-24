@@ -18,6 +18,32 @@
 Option Explicit
 
 '---------------------------------------------------------------
+' Function: guardProductHasChildren
+'   Returns True if the given product has children (Products.Count > 0), else False.
+'---------------------------------------------------------------
+Public Function guardProductHasChildren(prod As Product) As Boolean
+    On Error Resume Next
+    guardProductHasChildren = False
+    If prod Is Nothing Then Exit Function
+    If prod.Products Is Nothing Then Exit Function
+    If prod.Products.Count > 0 Then guardProductHasChildren = True
+    On Error GoTo 0
+End Function
+
+'---------------------------------------------------------------
+' Function: guardProductHasChildren
+'   Returns True if the given product has children (Products.Count > 0), else False.
+'---------------------------------------------------------------
+Public Function guardProductHasChildren(prod As Product) As Boolean
+    On Error Resume Next
+    guardProductHasChildren = False
+    If prod Is Nothing Then Exit Function
+    If prod.Products Is Nothing Then Exit Function
+    If prod.Products.Count > 0 Then guardProductHasChildren = True
+    On Error GoTo 0
+End Function
+
+'---------------------------------------------------------------
 ' Function: guardCatiaRunning
 '   Returns True if CATIA is running, otherwise False.
 '---------------------------------------------------------------
@@ -116,6 +142,14 @@ Public Function runAllGuards() As Boolean
 
     If Not guardDesignMode() Then
         MsgBox "Could not set Design Mode on the root product.", vbExclamation, "Gunther's Catia Wizard"
+        Exit Function
+    End If
+
+    ' New: Check that selected product has children
+    Dim selProd As Product
+    Set selProd = getSelectedProducts(True)
+    If Not guardProductHasChildren(selProd) Then
+        MsgBox "Selected product has no children. Please select a product with children.", vbExclamation, "Gunther's Catia Wizard"
         Exit Function
     End If
 

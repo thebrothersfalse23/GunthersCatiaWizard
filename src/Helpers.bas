@@ -60,36 +60,7 @@ Public Function getPropStr(ByVal obj As Object, ByVal propName As String) As Str
     On Error GoTo 0
 End Function
 
-'===============================================================
-' buildRefKey – Builds a stable, human-readable key for a reference
-'===============================================================
-
-'---------------------------------------------------------------
-' Function: buildRefKey
-'   Builds a stable, human-readable key for a reference Product.
-'   Default: "PartNumber|DocType"; if Definition exists → "PartNumber|DocType|Definition"
-'
-' Parameters:
-'   ref     - The reference Product object.
-'   docType - The document type as a string ("ProductDocument" or "PartDocument").
-'
-' Returns:
-'   String  - The constructed key, or "" if PartNumber is empty.
-'---------------------------------------------------------------
-Public Function buildRefKey(ByVal ref As Product, ByVal docType As String) As String
-    On Error Resume Next
-    Dim pn As String: pn = Trim$(ref.PartNumber)
-    Dim defn As String: defn = Trim$(ref.Definition)
-    On Error GoTo 0
-
-    If Len(pn) = 0 Then
-        buildRefKey = ""
-    ElseIf Len(defn) > 0 Then
-        buildRefKey = UCase$(pn) & "|" & docType & "|" & UCase$(defn)
-    Else
-        buildRefKey = UCase$(pn) & "|" & docType
-    End If
-End Function
+'' buildRefKey is now defined in improvedTraversal and should not be duplicated here.
 
 '---------------------------------------------------------------
 ' Function: getSelectedProducts
