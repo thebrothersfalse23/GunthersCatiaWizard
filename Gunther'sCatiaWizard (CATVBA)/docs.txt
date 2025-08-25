@@ -1,0 +1,376 @@
+' CATIA Product Structure Traversal Module Documentation
+' ====================================================
+'
+' This document describes all public functions, subs, and helpers defined in `traversal.txt`. For each, the required and optional arguments, behavior, and example calls are provided.
+' ---
+' ## Module-level Variables
+' These are declared as `Public` in a standard module and are used for global state management. They are not passed as arguments but are referenced by many functions.
+' See the top of `traversal.txt` for the full list and descriptions.
+' ---
+' ## Enum: `traversalModes`
+' Defines the available traversal modes for the main traversal function. Each mode determines the behavior of `traverseProduct` and the expected parameters in the `traversalParams` collection.
+' ---
+' ## Sub: `traverseProduct   Sub traverseProduct(ByVal mode As traversalModes, ByRef traversalParams As Collection)
+' **Arguments:**
+' - `mode` (Required): A value from the `traversalModes` enum specifying the traversal operation.
+' - `traversalParams` (Required): A `Collection` of key/value pairs. The required keys depend on the selected mode (see below).
+' **Behavior:**
+' Performs a breadth-first traversal of a CATIA product structure, executing logic based on the selected mode. Parameters in `traversalParams` must match the requirements for the chosen mode. If a required parameter is missing, an error message is shown.
+' **Example:**
+'   Dim params As New Collection
+'   params.Add rootProd, "targetProd"
+'   params.Add uniques, "uniques"
+'   Call traverseProduct(tmCollectUniques, params)
+' ---
+' ## Helper Functions
+' ### `getRefDocType   Private Function getRefDocType(ByVal ref As Product) As String
+' **Arguments:**
+' - `ref` (Required): Product reference.
+' **Returns:**
+' - String: "PartDocument", "ProductDocument", or "" (unknown).
+' **Example:**
+'   Dim docType As String
+'   docType = getRefDocType(prod)
+' ### `buildRefKey   Private Function buildRefKey(ByVal ref As Product, ByVal docType As String) As String
+' **Arguments:**
+' - `ref` (Required): Product reference.
+' - `docType` (Required): Document type string.
+' **Returns:**
+' - String: Uniqueness key for the product.
+' **Example:**
+'   Dim key As String
+'   key = buildRefKey(prod, "ProductDocument")
+' ---
+' ## Traversal Operation Wrappers
+' Each of the following subs wraps a call to `traverseProduct` with a specific mode and parameter set. All optional arguments default to global variables if not provided.
+' ### 0. `collectUniques   Sub collectUniques([targetProd As Product], [uniques As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start traversal from. Defaults to `rootProd`.
+' - `uniques` (Optional): Collection to store unique products. Defaults to `uniqueProds`.
+' **Behavior:**
+' Collects unique products in the structure.
+' **Example:**
+'   Call collectUniques
+'   Call collectUniques(myProd, myUniques)
+' ### 1. `collectAllInstances   Sub collectAllInstances([targetProd As Product], [allInstances As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `allInstances` (Optional): Collection to store all instances. Defaults to new Collection.
+' **Behavior:**
+' Collects all product instances (including duplicates).
+' **Example:**
+'   Call collectAllInstances
+'   Call collectAllInstances(myProd, myInstances)
+' ### 2. `collectParts   Sub collectParts([targetProd As Product], [parts As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `parts` (Optional): Collection to store parts. Defaults to new Collection.
+' **Behavior:**
+' Collects only part objects (excludes assemblies).
+' **Example:**
+'   Call collectParts
+'   Call collectParts(myProd, myParts)
+' ### 3. `collectProducts   Sub collectProducts([targetProd As Product], [products As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `products` (Optional): Collection to store products. Defaults to new Collection.
+' **Behavior:**
+' Collects only product (assembly) objects (excludes parts).
+' **Example:**
+'   Call collectProducts
+'   Call collectProducts(myProd, myProducts)
+' ### 4. `duplicateProduct   Sub duplicateProduct([srcProd As Product], [duplicatedProd As Product], [saveDir As String])
+' **Arguments:**
+' - `srcProd` (Optional): Source product to duplicate. Defaults to `rootProd`.
+' - `duplicatedProd` (Optional): [ByRef] Receives the duplicated product.
+' - `saveDir` (Optional): Directory to save the duplicated product.
+' **Behavior:**
+' Duplicates a product and its structure.
+' **Example:**
+'   Call duplicateProduct
+'   Call duplicateProduct(myProd, myDup, "C:\\SaveDir")
+' ### 5. `assignProductData   Sub assignProductData([targetProd As Product], [assignType As assignProductDataHelpers], [value As Variant])
+' **Arguments:**
+' - `targetProd` (Optional): Product to assign data to. Defaults to `rootProd`.
+' - `assignType` (Optional): Enum value specifying property to assign.
+' - `value` (Optional): Value to assign.
+' **Behavior:**
+' Assigns property data to products during traversal.
+' **Example:**
+'   Call assignProductData(myProd, assignPN, "12345")
+' ### 6. `copyTemplate   Sub copyTemplate([targetProd As Product], [template As Product])
+' **Arguments:**
+' - `targetProd` (Optional): Product to copy to. Defaults to `rootProd`.
+' - `template` (Optional): Template product. Defaults to `templateProd`.
+' **Behavior:**
+' Copies properties/structure from a template product.
+' **Example:**
+'   Call copyTemplate
+'   Call copyTemplate(myProd, myTemplate)
+' ### 7. `collectLeaves   Sub collectLeaves([targetProd As Product], [leaves As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `leaves` (Optional): Collection to store leaves. Defaults to new Collection.
+' **Behavior:**
+' Collects only leaf products (end-nodes).
+' **Example:**
+'   Call collectLeaves
+'   Call collectLeaves(myProd, myLeaves)
+' ### 8. `collectAssemblies   Sub collectAssemblies([targetProd As Product], [assemblies As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `assemblies` (Optional): Collection to store assemblies. Defaults to new Collection.
+' **Behavior:**
+' Collects only assemblies (products with children).
+' **Example:**
+'   Call collectAssemblies
+'   Call collectAssemblies(myProd, myAssemblies)
+' ### 9. `collectByProperty   Sub collectByProperty([targetProd As Product], [propName As String], [propValue As Variant], [matches As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `propName` (Optional): Property name to match.
+' - `propValue` (Optional): Property value to match.
+' - `matches` (Optional): Collection to store matches. Defaults to new Collection.
+' **Behavior:**
+' Collects products matching a specific property value.
+' **Example:**
+'   Call collectByProperty(myProd, "Material", "Steel", myMatches)
+' ### 10. `collectByName   Sub collectByName([targetProd As Product], [nameToMatch As String], [matches As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `nameToMatch` (Optional): Name to match.
+' - `matches` (Optional): Collection to store matches. Defaults to new Collection.
+' **Behavior:**
+' Collects products with a specific name.
+' **Example:**
+'   Call collectByName(myProd, "Widget", myMatches)
+' ### 11. `collectByPartNumber   Sub collectByPartNumber([targetProd As Product], [partNumber As String], [matches As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `partNumber` (Optional): Part number to match.
+' - `matches` (Optional): Collection to store matches. Defaults to new Collection.
+' **Behavior:**
+' Collects products with a specific part number.
+' **Example:**
+'   Call collectByPartNumber(myProd, "PN-123", myMatches)
+' ### 12. `collectByCustomFilter   Sub collectByCustomFilter([targetProd As Product], [filterFunc As String], [matches As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `filterFunc` (Optional): Name of custom filter function.
+' - `matches` (Optional): Collection to store matches. Defaults to new Collection.
+' **Behavior:**
+' Collects products matching a custom filter function.
+' **Example:**
+'   Call collectByCustomFilter(myProd, "IsSpecialProduct", myMatches)
+' ### 13. `countProducts   Sub countProducts([targetProd As Product], [count As Long])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `count` (Optional): [ByRef] Receives product count.
+' **Behavior:**
+' Counts the number of products (assemblies).
+' **Example:**
+'   Dim cnt As Long
+'   Call countProducts(myProd, cnt)
+' ### 14. `countParts   Sub countParts([targetProd As Product], [count As Long])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `count` (Optional): [ByRef] Receives part count.
+' **Behavior:**
+' Counts the number of parts.
+' **Example:**
+'   Dim cnt As Long
+'   Call countParts(myProd, cnt)
+' ### 15. `logTraversal   Sub logTraversal([targetProd As Product], [logFilePath As String])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `logFilePath` (Optional): Path to log file.
+' **Behavior:**
+' Logs traversal steps for debugging or reporting.
+' **Example:**
+'   Call logTraversal(myProd, "C:\\Logs\\traversal.log")
+' ### 16. `validateStructure   Sub validateStructure([targetProd As Product], [isValid As Boolean], [errorList As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `isValid` (Optional): [ByRef] Receives True/False.
+' - `errorList` (Optional): [ByRef] Receives error messages. Defaults to new Collection.
+' **Behavior:**
+' Validates product structure for errors or inconsistencies.
+' **Example:**
+'   Dim valid As Boolean
+'   Dim errs As New Collection
+'   Call validateStructure(myProd, valid, errs)
+' ### 17. `collectParents   Sub collectParents([targetProd As Product], [parents As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `parents` (Optional): Collection to store parents. Defaults to new Collection.
+' **Behavior:**
+' Collects parent products for each node.
+' **Example:**
+'   Call collectParents(myProd, myParents)
+' ### 18. `collectChildren   Sub collectChildren([targetProd As Product], [children As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `children` (Optional): Collection to store children. Defaults to new Collection.
+' **Behavior:**
+' Collects child products for each node.
+' **Example:**
+'   Call collectChildren(myProd, myChildren)
+' ### 19. `collectPaths   Sub collectPaths([targetProd As Product], [paths As Collection])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `paths` (Optional): Collection to store paths. Defaults to new Collection.
+' **Behavior:**
+' Collects paths from root to each product/part.
+' **Example:**
+'   Call collectPaths(myProd, myPaths)
+' ### 20. `saveAll   Sub saveAll([targetProd As Product])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' **Behavior:**
+' Saves all existing products/parts.
+' **Example:**
+'   Call saveAll(myProd)
+' ### 21. `saveAsAll   Sub saveAsAll([targetProd As Product], [newName As String])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `newName` (Optional): New name for save-as operation.
+' **Behavior:**
+' Saves all products/parts with a new name.
+' **Example:**
+'   Call saveAsAll(myProd, "NewAssembly")
+' ### 22. `sendTo   Sub sendTo([targetProd As Product], [destination As String])
+' **Arguments:**
+' - `targetProd` (Optional): Product to start from. Defaults to `rootProd`.
+' - `destination` (Optional): Destination for send-to operation.
+' **Behavior:**
+' Sends all products/parts to a specified destination.
+' **Example:**
+'   Call sendTo(myProd, "C:\\Export")
+' ---
+' ## Input/Selection Helper Functions
+' ### `getActiveProduct   Function getActiveProduct([rootDoc As Document]) As Product
+' **Arguments:**
+' - `rootDoc` (Optional): Document to get product from. Defaults to `CATIA.ActiveDocument`.
+' **Returns:**
+' - Product object from the active document.
+' **Example:**
+'   Set prod = getActiveProduct()
+' ### `getTopProduct   Function getTopProduct([rootDoc As Document]) As Product
+' **Arguments:**
+' - `rootDoc` (Optional): Document to get top product from. Defaults to `CATIA.ActiveDocument`.
+' **Returns:**
+' - Top-level product object.
+' **Example:**
+'   Set topProd = getTopProduct()
+' ### `getSelectedProduct   Function getSelectedProduct([rootSel As Selection]) As Product
+' **Arguments:**
+' - `rootSel` (Optional): Selection object. Defaults to `CATIA.ActiveDocument.Selection`.
+' **Returns:**
+' - Product object from selection, or Nothing if none selected.
+' **Example:**
+'   Set selProd = getSelectedProduct()
+' ### `getTemplateProduct   Function getTemplateProduct(templateName As String) As Product
+' **Arguments:**
+' - `templateName` (Required): Name of template product document.
+' **Returns:**
+' - Product object matching the template name, or Nothing.
+' **Example:**
+'   Set templateProd = getTemplateProduct("Template.CATProduct")
+' ### `handleMultipleSelections   Sub handleMultipleSelections(selectedProds As Collection)
+' **Arguments:**
+' - `selectedProds` (Required): Collection of selected Product objects.
+' **Behavior:**
+' Iterates through each selected product for batch operations.
+' **Example:**
+'   Call handleMultipleSelections(mySelections)
+' ### `getUserInputString   Function getUserInputString(prompt As String) As String
+' **Arguments:**
+' - `prompt` (Required): Prompt to display.
+' **Returns:**
+' - User-entered string.
+' **Example:**
+'   Dim name As String
+'   name = getUserInputString("Enter part name:")
+' ### `getUserInputNumber   Function getUserInputNumber(prompt As String) As Double
+' **Arguments:**
+' - `prompt` (Required): Prompt to display.
+' **Returns:**
+' - User-entered number (Double), or 0 if not numeric.
+' **Example:**
+'   Dim qty As Double
+'   qty = getUserInputNumber("Enter quantity:")
+' ### `getUserInputBoolean   Function getUserInputBoolean(prompt As String) As Boolean
+' **Arguments:**
+' - `prompt` (Required): Prompt to display.
+' **Returns:**
+' - True if user selects Yes, False otherwise.
+' **Example:**
+'   Dim proceed As Boolean
+'   proceed = getUserInputBoolean("Continue?")
+' ### `getUserInputFilePath`, `getUserInputFolderPath`, `getUserInputFromList`, `getUserInputMultiSelect   Function getUserInputFilePath(prompt As String) As String
+'   Function getUserInputFolderPath(prompt As String) As String
+'   Function getUserInputFromList(prompt As String, options As Variant) As Variant
+'   Function getUserInputMultiSelect(prompt As String, options As Variant) As Collection
+' **Arguments:**
+' - `prompt` (Required): Prompt to display.
+' - `options` (Required for list/multiselect): List of options.
+' **Returns:**
+' - File/folder path, selected value, or collection of selected values.
+' **Example:**
+'   Dim filePath As String
+'   filePath = getUserInputFilePath("Select a file:")
+' ---
+' ## Product Duplication and Property Assignment
+' ### `generateTD   Sub generateTD(toolDesignProduct As Product, toolDesignParams As Collection, [templateProduct As Product])
+' **Arguments:**
+' - `toolDesignProduct` (Required): Product to generate TD for.
+' - `toolDesignParams` (Required): Parameters for TD generation.
+' - `templateProduct` (Optional): Template product.
+' **Behavior:**
+' Generates a tool design (implementation not shown).
+' **Example:**
+'   Call generateTD(myProd, myParams, myTemplate)
+' ### `abDuplicateProduct   Sub abDuplicateProduct(srcProd As Product, duplicatedProd As Product, [templateProd As Product])
+' **Arguments:**
+' - `srcProd` (Required): Source product to duplicate.
+' - `duplicatedProd` (ByRef): Receives duplicated product.
+' - `templateProd` (Optional): Template for property/structure copying.
+' **Behavior:**
+' Duplicates a product and its structure recursively.
+' **Example:**
+'   Call abDuplicateProduct(myProd, myDup, myTemplate)
+' ### `copyProductProperties   Sub copyProductProperties(src As Product, dest As Product, copyPartNumber As Boolean)
+' **Arguments:**
+' - `src` (Required): Source product.
+' - `dest` (Required): Destination product.
+' - `copyPartNumber` (Required): If False, PartNumber is not copied.
+' **Behavior:**
+' Copies properties from source to destination product.
+' **Example:**
+'   Call copyProductProperties(mySrc, myDest, True)
+' ### `assignProductProperty   Sub assignProductProperty(prod As Product, assignType As assignProductDataHelpers, value As Variant)
+' **Arguments:**
+' - `prod` (Required): Product to assign property to.
+' - `assignType` (Required): Enum value specifying property.
+' - `value` (Required): Value to assign.
+' **Behavior:**
+' Assigns a property to a product based on the helper enum.
+' **Example:**
+'   Call assignProductProperty(myProd, assignPN, "12345")
+' ### `promptForTemplateProduct   Function promptForTemplateProduct() As Product
+' **Arguments:**
+' None.
+' **Returns:**
+' - Product object selected by user, or Nothing if cancelled.
+' **Example:**
+'   Set templateProd = promptForTemplateProduct()
+' ---
+' ## Enum: `assignProductDataHelpers`
+' Specifies which property to assign in `assignProductData` and `assignProductProperty`. See code for full list and descriptions.
+' ---
+' ## Notes
+' - All functions/subs that accept optional arguments will use global variables if not provided.
+' - All collection arguments should be initialized before passing, unless noted otherwise.
+' - Example calls use `myProd`, `myUniques`, etc. as user-defined variables.
+' ---
+' End of documentation.
