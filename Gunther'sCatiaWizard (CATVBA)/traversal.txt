@@ -71,133 +71,152 @@ Dim enqueueLate As Boolean
 Dim i As Long
 
 Select Case mode
-    Case tmCollectUniques
-        Dim localUniques As Collection
-        Set localUniques = New Collection
-        ' TODO: Set localUniques = argument passed from collectUniques wrapper if provided
 
-    Case tmCollectAllInstances
-        Dim localAllInstances As Collection
-        Set localAllInstances = New Collection
-        ' TODO: Set localAllInstances = argument passed from collectAllInstances wrapper if provided
+    ' --- Traversal parameter parsing system ---
+    ' Each mode expects specific parameters in traversalParams (a Collection with key/value pairs).
+    ' This block extracts and assigns those parameters to local variables for use in the traversal logic.
+    ' If a required parameter is missing, an error is raised for easier debugging.
+    ' All parameter extraction is wrapped in error handling for robustness.
 
-    Case tmCollectParts
-        Dim localParts As Collection
-        Set localParts = New Collection
-        ' TODO: Set localParts = argument passed from collectParts wrapper if provided
+    Dim paramKey As String
+    On Error GoTo ParamParseError
+    Select Case mode
+        Case tmCollectUniques
+            ' Expects: "uniques" (Collection)
+            Dim localUniques As Collection
+            Set localUniques = traversalParams("uniques")
 
-    Case tmCollectProducts
-        Dim localProducts As Collection
-        Set localProducts = New Collection
-        ' TODO: Set localProducts = argument passed from collectProducts wrapper if provided
+        Case tmCollectAllInstances
+            ' Expects: "allInstances" (Collection)
+            Dim localAllInstances As Collection
+            Set localAllInstances = traversalParams("allInstances")
 
-    Case tmDuplicateProduct
-        Dim localDuplicatedProd As Product
-        Set localDuplicatedProd = Nothing
-        ' TODO: Set localDuplicatedProd = argument passed from duplicateProduct wrapper if provided
+        Case tmCollectParts
+            ' Expects: "parts" (Collection)
+            Dim localParts As Collection
+            Set localParts = traversalParams("parts")
 
-    Case tmAssignProductData
-        Dim localAssignType As assignProductDataHelpers
-        Dim localAssignValue As Variant
-        localAssignType = assignPN
-        localAssignValue = ""
-        ' TODO: Set localAssignType and localAssignValue = arguments passed from assignProductData wrapper if provided
+        Case tmCollectProducts
+            ' Expects: "products" (Collection)
+            Dim localProducts As Collection
+            Set localProducts = traversalParams("products")
 
-    Case tmCopyTemplate
-        Dim localTemplate As Product
-        Set localTemplate = Nothing
-        ' TODO: Set localTemplate = argument passed from tmCopyTemplate wrapper if provided
+        Case tmDuplicateProduct
+            ' Expects: "duplicatedProd" (Product)
+            Dim localDuplicatedProd As Product
+            Set localDuplicatedProd = traversalParams("duplicatedProd")
 
-    Case tmCollectLeaves
-        Dim localLeaves As Collection
-        Set localLeaves = New Collection
-        ' TODO: Set localLeaves = argument passed from collectLeaves wrapper if provided
+        Case tmAssignProductData
+            ' Expects: "assignType" (assignProductDataHelpers), "value" (Variant)
+            Dim localAssignType As assignProductDataHelpers
+            Dim localAssignValue As Variant
+            localAssignType = traversalParams("assignType")
+            localAssignValue = traversalParams("value")
 
-    Case tmCollectAssemblies
-        Dim localAssemblies As Collection
-        Set localAssemblies = New Collection
-        ' TODO: Set localAssemblies = argument passed from collectAssemblies wrapper if provided
+        Case tmCopyTemplate
+            ' Expects: "template" (Product)
+            Dim localTemplate As Product
+            Set localTemplate = traversalParams("template")
 
-    Case tmCollectByProperty
-        Dim localPropName As String
-        Dim localPropValue As Variant
-        Dim localMatches As Collection
-        localPropName = ""
-        localPropValue = ""
-        Set localMatches = New Collection
-        ' TODO: Set localPropName, localPropValue, localMatches = arguments passed from collectByProperty wrapper if provided
+        Case tmCollectLeaves
+            ' Expects: "leaves" (Collection)
+            Dim localLeaves As Collection
+            Set localLeaves = traversalParams("leaves")
 
-    Case tmCollectByName
-        Dim localNameToMatch As String
-        Dim localMatches As Collection
-        localNameToMatch = ""
-        Set localMatches = New Collection
-        ' TODO: Set localNameToMatch, localMatches = arguments passed from collectByName wrapper if provided
+        Case tmCollectAssemblies
+            ' Expects: "assemblies" (Collection)
+            Dim localAssemblies As Collection
+            Set localAssemblies = traversalParams("assemblies")
 
-    Case tmCollectByPartNumber
-        Dim localPartNumberToMatch As String
-        Dim localMatches As Collection
-        localPartNumberToMatch = ""
-        Set localMatches = New Collection
-        ' TODO: Set localPartNumberToMatch, localMatches = arguments passed from collectByPartNumber wrapper if provided
+        Case tmCollectByProperty
+            ' Expects: "propName" (String), "propValue" (Variant), "matches" (Collection)
+            Dim localPropName As String
+            Dim localPropValue As Variant
+            Dim localMatches As Collection
+            localPropName = traversalParams("propName")
+            localPropValue = traversalParams("propValue")
+            Set localMatches = traversalParams("matches")
 
-    Case tmCollectByCustomFilter
-        Dim localFilterFunc As String
-        Dim localMatches As Collection
-        localFilterFunc = ""
-        Set localMatches = New Collection
-        ' TODO: Set localFilterFunc, localMatches = arguments passed from collectByCustomFilter wrapper if provided
+        Case tmCollectByName
+            ' Expects: "nameToMatch" (String), "matches" (Collection)
+            Dim localNameToMatch As String
+            Dim localMatches As Collection
+            localNameToMatch = traversalParams("nameToMatch")
+            Set localMatches = traversalParams("matches")
 
-    Case tmCountProducts
-        Dim localProdCount As Long
-        localProdCount = 0
-        ' TODO: Set localProdCount = argument passed from countProducts wrapper if provided
+        Case tmCollectByPartNumber
+            ' Expects: "partNumber" (String), "matches" (Collection)
+            Dim localPartNumberToMatch As String
+            Dim localMatches As Collection
+            localPartNumberToMatch = traversalParams("partNumber")
+            Set localMatches = traversalParams("matches")
 
-    Case tmCountParts
-        Dim localPartCount As Long
-        localPartCount = 0
-        ' TODO: Set localPartCount = argument passed from countParts wrapper if provided
+        Case tmCollectByCustomFilter
+            ' Expects: "filterFunc" (String), "matches" (Collection)
+            Dim localFilterFunc As String
+            Dim localMatches As Collection
+            localFilterFunc = traversalParams("filterFunc")
+            Set localMatches = traversalParams("matches")
 
-    Case tmLogTraversal
-        Dim localLogFilePath As String
-        localLogFilePath = ""
-        ' TODO: Set localLogFilePath = argument passed from logTraversal wrapper if provided
+        Case tmCountProducts
+            ' Expects: "count" (Long, ByRef)
+            Dim localProdCount As Long
+            localProdCount = traversalParams("count")
 
-    Case tmValidateStructure
-        Dim localIsValid As Boolean
-        Dim localErrorList As Collection
-        localIsValid = True
-        Set localErrorList = New Collection
-        ' TODO: Set localIsValid, localErrorList = arguments passed from validateStructure wrapper if provided
+        Case tmCountParts
+            ' Expects: "count" (Long, ByRef)
+            Dim localPartCount As Long
+            localPartCount = traversalParams("count")
 
-    Case tmCollectParents
-        Dim localParents As Collection
-        Set localParents = New Collection
-        ' TODO: Set localParents = argument passed from collectParents wrapper if provided
+        Case tmLogTraversal
+            ' Expects: "logFilePath" (String)
+            Dim localLogFilePath As String
+            localLogFilePath = traversalParams("logFilePath")
 
-    Case tmCollectChildren
-        Dim localChildren As Collection
-        Set localChildren = New Collection
-        ' TODO: Set localChildren = argument passed from collectChildren wrapper if provided
+        Case tmValidateStructure
+            ' Expects: "isValid" (Boolean, ByRef), "errorList" (Collection)
+            Dim localIsValid As Boolean
+            Dim localErrorList As Collection
+            localIsValid = traversalParams("isValid")
+            Set localErrorList = traversalParams("errorList")
 
-    Case tmCollectPaths
-        Dim localPaths As Collection
-        Set localPaths = New Collection
-        ' TODO: Set localPaths = argument passed from collectPaths wrapper if provided
+        Case tmCollectParents
+            ' Expects: "parents" (Collection)
+            Dim localParents As Collection
+            Set localParents = traversalParams("parents")
 
-    Case tmSaveAll
-        ' TODO: Set any relevant variables from saveAll wrapper if provided
+        Case tmCollectChildren
+            ' Expects: "children" (Collection)
+            Dim localChildren As Collection
+            Set localChildren = traversalParams("children")
 
-    Case tmSaveAsAll
-        Dim localNewName As String
-        localNewName = ""
-        ' TODO: Set localNewName = argument passed from saveAsAll wrapper if provided
+        Case tmCollectPaths
+            ' Expects: "paths" (Collection)
+            Dim localPaths As Collection
+            Set localPaths = traversalParams("paths")
 
-    Case tmSendTo
-        Dim localDestination As String
-        localDestination = ""
-        ' TODO: Set localDestination = argument passed from sendTo wrapper if provided
-End Select  
+        Case tmSaveAll
+            ' No additional parameters required for saveAll
+
+        Case tmSaveAsAll
+            ' Expects: "newName" (String)
+            Dim localNewName As String
+            localNewName = traversalParams("newName")
+
+        Case tmSendTo
+            ' Expects: "destination" (String)
+            Dim localDestination As String
+            localDestination = traversalParams("destination")
+    End Select
+    On Error GoTo 0
+    GoTo ParamParseDone
+
+ParamParseError:
+    ' If a required parameter is missing, raise a descriptive error
+    MsgBox "[traverseProduct] Missing or invalid parameter for mode " & mode & ": " & Err.Description, vbCritical, "Parameter Parsing Error"
+    Resume ParamParseDone
+
+ParamParseDone:
 
 '--- Start BFS  q.Add root
     Do While q.Count > 0
@@ -335,117 +354,68 @@ End Function
 
 ' 0. Collect unique products
 Sub collectUniques(Optional ByRef targetProd As Product = Nothing, Optional ByRef uniques As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store unique products if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectUniques mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: uniques (collection to store results)
-    ' Example: Call collectUniques CATIA.ActiveDocument.Product, myUniques
     If targetProd Is Nothing Then Set targetProd = rootProd
     If uniques Is Nothing Then Set uniques = uniqueProds
     Dim traverseParams As New Collection
     traverseParams.Add targetProd, "targetProd"
     traverseParams.Add uniques, "uniques"
-
-    ' Pseudo code:
-    ' 1. Start from the targetProd (root or sub-product).
-    ' 2. Traverse the product structure using BFS.
-    ' 3. For each encountered product reference:
-    '    a. Generate a unique key (e.g., using buildRefKey).
-    '    b. If the key is not already in uniques, add the product to uniques.
-    ' 4. Continue until all nodes are processed.
-    ' 5. Return the uniques collection.
-
     Call traverseProduct(tmCollectUniques, traverseParams)
+
 End Sub
 
 
 ' 1. Collect all product instances (including duplicates)
 Sub collectAllInstances(Optional ByRef targetProd As Product = Nothing, Optional ByRef allInstances As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store all instances if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectAllInstances mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: allInstances (collection to store results)
-    ' Example: Call collectAllInstances CATIA.ActiveDocument.Product, myInstances
+    ' Ensures traversalParams is constructed with correct keys for tmCollectAllInstances
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If allInstances Is Nothing Then Set allInstances = allInstances
+    If allInstances Is Nothing Then Set allInstances = New Collection
     Dim traverseParams As New Collection
-    traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add allInstances, "allInstances"
+    traverseParams.Add allInstances, "allInstances"   ' Required by traverseProduct
+    traverseParams.Add targetProd, "targetProd"       ' Always include targetProd for traversal
     Call traverseProduct(tmCollectAllInstances, traverseParams)
 End Sub
 
 ' 2. Collect only part objects (excluding assemblies)
 Sub collectParts(Optional ByRef targetProd As Product = Nothing, Optional ByRef parts As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store parts if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectParts mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: parts (collection to store results)
-    ' Example: Call collectParts CATIA.ActiveDocument.Product, myParts
+    ' Ensures traversalParams is constructed with correct keys for tmCollectParts
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If parts Is Nothing Then Set parts = uniqueParts
+    If parts Is Nothing Then Set parts = New Collection
     Dim traverseParams As New Collection
+    traverseParams.Add parts, "parts"                 ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add parts, "parts"
     Call traverseProduct(tmCollectParts, traverseParams)
 End Sub
 
 ' 3. Collect only product (assembly) objects (excluding parts)
 Sub collectProducts(Optional ByRef targetProd As Product = Nothing, Optional ByRef products As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store assemblies if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectProducts mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: products (collection to store results)
-    ' Example: Call collectProducts CATIA.ActiveDocument.Product, myProducts
+    ' Ensures traversalParams is constructed with correct keys for tmCollectProducts
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If products Is Nothing Then Set products = uniqueProds
+    If products Is Nothing Then Set products = New Collection
     Dim traverseParams As New Collection
+    traverseParams.Add products, "products"           ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add products, "products"
     Call traverseProduct(tmCollectProducts, traverseParams)
 End Sub
 
 ' 4. Duplicate a product and its structure
 Sub duplicateProduct(Optional ByRef srcProd As Product = Nothing, Optional ByRef duplicatedProd As Product = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Create a new product object.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmDuplicateProduct mode and parameters.
-    ' Required Args: srcProd (product), duplicatedProd (product to receive the duplicate)
-    ' Example: Call duplicateProduct myProduct, myDuplicate
+    ' Ensures traversalParams is constructed with correct keys for tmDuplicateProduct
     If srcProd Is Nothing Then Set srcProd = rootProd
-    If duplicatedProd Is Nothing Then Set duplicatedProd = Nothing
+    ' duplicatedProd is expected to be set by caller or remain Nothing
     Dim traverseParams As New Collection
+    traverseParams.Add duplicatedProd, "duplicatedProd"   ' Required by traverseProduct
     traverseParams.Add srcProd, "srcProd"
-    traverseParams.Add duplicatedProd, "duplicatedProd"
     Call traverseProduct(tmDuplicateProduct, traverseParams)
 End Sub
 
 ' 5. Assign property data to products during traversal
 Sub assignProductData(Optional ByRef targetProd As Product = Nothing, Optional assignType As assignProductDataHelpers = -1, Optional value As Variant = Empty)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmAssignProductData mode and parameters.
-    ' Required Args: targetProd (product), assignType (assignProductDataHelpers), value (variant)
-    ' Example: Call assignProductData CATIA.ActiveDocument.Product, assignPN, "12345"
+    ' Ensures traversalParams is constructed with correct keys for tmAssignProductData
     If targetProd Is Nothing Then Set targetProd = rootProd
     Dim traverseParams As New Collection
-    traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add assignType, "assignType"
+    traverseParams.Add assignType, "assignType"           ' Required by traverseProduct
     traverseParams.Add value, "value"
+    traverseParams.Add targetProd, "targetProd"
     Call traverseProduct(tmAssignProductData, traverseParams)
 End Sub
 
@@ -508,262 +478,164 @@ End Sub
 
 ' 6. Similar to assignProductData, this is for batch assignments to bring products into allignment with a template.
 Sub copyTemplate(Optional ByRef targetProd As Product = Nothing, Optional ByRef template As Product = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCopyTemplate mode and parameters.
-    ' Required Args: targetProd (product), template (product)
-    ' Example: Call tmCopyTemplate CATIA.ActiveDocument.Product, myTemplate.
+    ' Ensures traversalParams is constructed with correct keys for tmCopyTemplate
     If targetProd Is Nothing Then Set targetProd = rootProd
     If template Is Nothing Then Set template = templateProd
     Dim traverseParams As New Collection
+    traverseParams.Add template, "template"               ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add template, "template"
     Call traverseProduct(tmCopyTemplate, traverseParams)
 End Sub
 
 ' 7. Collect only leaf products (end-nodes)
 Sub collectLeaves(Optional ByRef targetProd As Product = Nothing, Optional ByRef leaves As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store leaves if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectLeaves mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: leaves (collection to store results)
-    ' Example: Call collectLeaves CATIA.ActiveDocument.Product, myLeaves
+    ' Ensures traversalParams is constructed with correct keys for tmCollectLeaves
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If leaves Is Nothing Then Set leaves = Nothing
+    If leaves Is Nothing Then Set leaves = New Collection
     Dim traverseParams As New Collection
+    traverseParams.Add leaves, "leaves"                   ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add leaves, "leaves"
     Call traverseProduct(tmCollectLeaves, traverseParams)
 End Sub
 
 ' 8. Collect only assemblies (products with children)
 Sub collectAssemblies(Optional ByRef targetProd As Product = Nothing, Optional ByRef assemblies As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store assemblies if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectAssemblies mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: assemblies (collection to store results)
-    ' Example: Call collectAssemblies CATIA.ActiveDocument.Product, myAssemblies
+    ' Ensures traversalParams is constructed with correct keys for tmCollectAssemblies
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If assemblies Is Nothing Then Set assemblies = Nothing
+    If assemblies Is Nothing Then Set assemblies = New Collection
     Dim traverseParams As New Collection
+    traverseParams.Add assemblies, "assemblies"           ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add assemblies, "assemblies"
     Call traverseProduct(tmCollectAssemblies, traverseParams)
 End Sub
 
 ' 9. Collect products matching a specific property value
 Sub collectByProperty(Optional ByRef targetProd As Product = Nothing, Optional propName As String = "", Optional propValue As Variant = Empty, Optional ByRef matches As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store matches if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectByProperty mode and parameters.
-    ' Required Args: targetProd (product), propName (string), propValue (variant)
-    ' Optional Args: matches (collection to store results)
-    ' Example: Call collectByProperty CATIA.ActiveDocument.Product, "Material", "Steel", myMatches
+    ' Ensures traversalParams is constructed with correct keys for tmCollectByProperty
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If matches Is Nothing Then Set matches = Nothing
+    If matches Is Nothing Then Set matches = New Collection
     Dim traverseParams As New Collection
-    traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add propName, "propName"
+    traverseParams.Add propName, "propName"               ' Required by traverseProduct
     traverseParams.Add propValue, "propValue"
     traverseParams.Add matches, "matches"
+    traverseParams.Add targetProd, "targetProd"
     Call traverseProduct(tmCollectByProperty, traverseParams)
 End Sub
 
 ' 10. Collect products with a specific name
 Sub collectByName(Optional ByRef targetProd As Product = Nothing, Optional nameToMatch As String = "", Optional ByRef matches As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store matches if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectByName mode and parameters.
-    ' Required Args: targetProd (product), nameToMatch (string)
-    ' Optional Args: matches (collection to store results)
-    ' Example: Call collectByName CATIA.ActiveDocument.Product, "Bracket", myMatches
+    ' Ensures traversalParams is constructed with correct keys for tmCollectByName
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If matches Is Nothing Then Set matches = Nothing
+    If matches Is Nothing Then Set matches = New Collection
     Dim traverseParams As New Collection
-    traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add nameToMatch, "nameToMatch"
+    traverseParams.Add nameToMatch, "nameToMatch"         ' Required by traverseProduct
     traverseParams.Add matches, "matches"
+    traverseParams.Add targetProd, "targetProd"
     Call traverseProduct(tmCollectByName, traverseParams)
 End Sub
 
 ' 11. Collect products with a specific part number
 Sub collectByPartNumber(Optional ByRef targetProd As Product = Nothing, Optional partNumber As String = "", Optional ByRef matches As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store matches if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectByPartNumber mode and parameters.
-    ' Required Args: targetProd (product), partNumber (string)
-    ' Optional Args: matches (collection to store results)
-    ' Example: Call collectByPartNumber CATIA.ActiveDocument.Product, "PN-001", myMatches
+    ' Ensures traversalParams is constructed with correct keys for tmCollectByPartNumber
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If matches Is Nothing Then Set matches = Nothing
+    If matches Is Nothing Then Set matches = New Collection
     Dim traverseParams As New Collection
-    traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add partNumber, "partNumber"
+    traverseParams.Add partNumber, "partNumber"           ' Required by traverseProduct
     traverseParams.Add matches, "matches"
+    traverseParams.Add targetProd, "targetProd"
     Call traverseProduct(tmCollectByPartNumber, traverseParams)
 End Sub
 
 ' 12. Collect products matching a custom filter function
 Sub collectByCustomFilter(Optional ByRef targetProd As Product = Nothing, Optional filterFunc As String = "", Optional ByRef matches As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store matches if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectByCustomFilter mode and parameters.
-    ' Required Args: targetProd (product), filterFunc (string: name of filter function)
-    ' Optional Args: matches (collection to store results)
-    ' Example: Call collectByCustomFilter CATIA.ActiveDocument.Product, "IsCustomPart", myMatches
+    ' Ensures traversalParams is constructed with correct keys for tmCollectByCustomFilter
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If matches Is Nothing Then Set matches = Nothing
+    If matches Is Nothing Then Set matches = New Collection
     Dim traverseParams As New Collection
-    traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add filterFunc, "filterFunc"
+    traverseParams.Add filterFunc, "filterFunc"           ' Required by traverseProduct
     traverseParams.Add matches, "matches"
+    traverseParams.Add targetProd, "targetProd"
     Call traverseProduct(tmCollectByCustomFilter, traverseParams)
 End Sub
 
 ' 13. Count the number of products (assemblies)
 Sub countProducts(Optional ByRef targetProd As Product = Nothing, Optional ByRef count As Long = 0)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a counter.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCountProducts mode and parameters.
-    ' Required Args: targetProd (product), count (long to receive result)
-    ' Example: Call countProducts CATIA.ActiveDocument.Product, prodCount
+    ' Ensures traversalParams is constructed with correct keys for tmCountProducts
     If targetProd Is Nothing Then Set targetProd = rootProd
     Dim traverseParams As New Collection
+    traverseParams.Add count, "count"                     ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add count, "count"
     Call traverseProduct(tmCountProducts, traverseParams)
 End Sub
 
 ' 14. Count the number of parts
 Sub countParts(Optional ByRef targetProd As Product = Nothing, Optional ByRef count As Long = 0)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a counter.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCountParts mode and parameters.
-    ' Required Args: targetProd (product), count (long to receive result)
-    ' Example: Call countParts CATIA.ActiveDocument.Product, partCount
+    ' Ensures traversalParams is constructed with correct keys for tmCountParts
     If targetProd Is Nothing Then Set targetProd = rootProd
     Dim traverseParams As New Collection
+    traverseParams.Add count, "count"                     ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add count, "count"
     Call traverseProduct(tmCountParts, traverseParams)
 End Sub
 
 ' 15. Log traversal steps for debugging or reporting
 Sub logTraversal(Optional ByRef targetProd As Product = Nothing, Optional logFilePath As String = "")
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmLogTraversal mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: logFilePath (string: path to log file)
-    ' Example: Call logTraversal CATIA.ActiveDocument.Product, "C:\temp\traversal.log"
+    ' Ensures traversalParams is constructed with correct keys for tmLogTraversal
     If targetProd Is Nothing Then Set targetProd = rootProd
     Dim traverseParams As New Collection
+    traverseParams.Add logFilePath, "logFilePath"         ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add logFilePath, "logFilePath"
     Call traverseProduct(tmLogTraversal, traverseParams)
 End Sub
 
 ' 16. Validate product structure for errors or inconsistencies
 Sub validateStructure(Optional ByRef targetProd As Product = Nothing, Optional ByRef isValid As Boolean = True, Optional ByRef errorList As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a flag for validity and a collection for errors if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmValidateStructure mode and parameters.
-    ' Required Args: targetProd (product), isValid (boolean to receive result)
-    ' Optional Args: errorList (collection to store errors)
-    ' Example: Call validateStructure CATIA.ActiveDocument.Product, isValid, myErrors
+    ' Ensures traversalParams is constructed with correct keys for tmValidateStructure
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If errorList Is Nothing Then Set errorList = errorLog
+    If errorList Is Nothing Then Set errorList = New Collection
     Dim traverseParams As New Collection
-    traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add isValid, "isValid"
+    traverseParams.Add isValid, "isValid"                 ' Required by traverseProduct
     traverseParams.Add errorList, "errorList"
+    traverseParams.Add targetProd, "targetProd"
     Call traverseProduct(tmValidateStructure, traverseParams)
 End Sub
 
 ' 17. Collect parent products for each node
 Sub collectParents(Optional ByRef targetProd As Product = Nothing, Optional ByRef parents As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store parents if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectParents mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: parents (collection to store results)
-    ' Example: Call collectParents CATIA.ActiveDocument.Product, myParents
+    ' Ensures traversalParams is constructed with correct keys for tmCollectParents
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If parents Is Nothing Then Set parents = parentProds
+    If parents Is Nothing Then Set parents = New Collection
     Dim traverseParams As New Collection
+    traverseParams.Add parents, "parents"                 ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add parents, "parents"
     Call traverseProduct(tmCollectParents, traverseParams)
 End Sub
 
 ' 18. Collect child products for each node
 Sub collectChildren(Optional ByRef targetProd As Product = Nothing, Optional ByRef children As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store children if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectChildren mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: children (collection to store results)
-    ' Example: Call collectChildren CATIA.ActiveDocument.Product, myChildren
+    ' Ensures traversalParams is constructed with correct keys for tmCollectChildren
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If children Is Nothing Then Set children = childProds
+    If children Is Nothing Then Set children = New Collection
     Dim traverseParams As New Collection
+    traverseParams.Add children, "children"               ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add children, "children"
     Call traverseProduct(tmCollectChildren, traverseParams)
 End Sub
 
 ' 19. Collect paths from root to each product/part
 Sub collectPaths(Optional ByRef targetProd As Product = Nothing, Optional ByRef paths As Collection = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Initialize a collection to store paths if not provided.
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmCollectPaths mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Optional Args: paths (collection to store results)
-    ' Example: Call collectPaths CATIA.ActiveDocument.Product, myPaths
+    ' Ensures traversalParams is constructed with correct keys for tmCollectPaths
     If targetProd Is Nothing Then Set targetProd = rootProd
-    If paths Is Nothing Then Set paths = Nothing
+    If paths Is Nothing Then Set paths = New Collection
     Dim traverseParams As New Collection
+    traverseParams.Add paths, "paths"                     ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add paths, "paths"
     Call traverseProduct(tmCollectPaths, traverseParams)
 End Sub
 
 ' 20. Save all existing products/parts
 Sub saveAll(Optional ByRef targetProd As Product = Nothing)
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmSaveAll mode and parameters.
-    ' Required Args: targetProd (product)
-    ' Example: Call saveAll CATIA.ActiveDocument.Product
+    ' Ensures traversalParams is constructed with correct keys for tmSaveAll
     If targetProd Is Nothing Then Set targetProd = rootProd
     Dim traverseParams As New Collection
     traverseParams.Add targetProd, "targetProd"
@@ -772,31 +644,21 @@ End Sub
 
 ' 21. Save all existing products/parts with a new name
 Sub saveAsAll(Optional ByRef targetProd As Product = Nothing, Optional newName As String = "")
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmSaveAsAll mode and parameters.
-    ' Required Args: targetProd (product), newName (string)
-    ' Example: Call saveAsAll CATIA.ActiveDocument.Product, "NewAssembly"
+    ' Ensures traversalParams is constructed with correct keys for tmSaveAsAll
     If targetProd Is Nothing Then Set targetProd = rootProd
     Dim traverseParams As New Collection
+    traverseParams.Add newName, "newName"                 ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add newName, "newName"
     Call traverseProduct(tmSaveAsAll, traverseParams)
 End Sub
 
 ' 22. Send all products/parts to a specified destination
 Sub sendTo(Optional ByRef targetProd As Product = Nothing, Optional destination As String = "")
-    ' Can be run on any product (root or sub-product)
-    ' Logic Flow:
-    '   - Populate a parameters collection for traversal.
-    '   - Call traverseProduct with tmSendTo mode and parameters.
-    ' Required Args: targetProd (product), destination (string: target location)
-    ' Example: Call sendTo CATIA.ActiveDocument.Product, "D:\ExportedAssemblies"
+    ' Ensures traversalParams is constructed with correct keys for tmSendTo
     If targetProd Is Nothing Then Set targetProd = rootProd
     Dim traverseParams As New Collection
+    traverseParams.Add destination, "destination"         ' Required by traverseProduct
     traverseParams.Add targetProd, "targetProd"
-    traverseParams.Add destination, "destination"
     Call traverseProduct(tmSendTo, traverseParams)
 End Sub
 
