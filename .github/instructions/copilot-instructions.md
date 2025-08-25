@@ -27,7 +27,7 @@
 
 **Workflow for Edits:**
 - Update related functions/subs and documentation to maintain consistency.
-- Verify all modules compile without errors or warnings.
+- Verify code will compile without errors or warnings.
 - Run all available tests after changes.
 - Do not include change logs or date-specific comments.
 
@@ -37,3 +37,4 @@
 - Keep UI, core logic, and documentation in sync at all times.
 
 ---
+

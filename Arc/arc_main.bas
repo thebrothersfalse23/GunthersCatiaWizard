@@ -14,13 +14,11 @@ Option Explicit
 Public prodDoc As ProductDocument     ' Active ProductDocument
 Public rootProd As Product            ' Root Product of the assembly
 
-
 '===============================================================
 ' Entry Point (guards → init → UI dispatch only)
 '===============================================================
 Sub CATMain()
-    Launchpad.Show
-    ' Keep Main clean. See Docs for full examples & usage.
+
 End Sub
 
 '===============================================================
