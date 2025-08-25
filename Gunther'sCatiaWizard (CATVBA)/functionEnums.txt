@@ -367,6 +367,178 @@ Sub sendTo(Optional ByRef targetProd As Product = Nothing, Optional destination 
     If targetProd Is Nothing Then Set targetProd = rootProd
 End Sub
 
+'Handle Input Functions
+Function getActiveProduct(Optional ByRef rootDoc As Document = Nothing) As Product
+    ' Get the currently active product in the CATIA session.
+    ' Returns the Product object from the currently active CATIA document.
+    ' If rootDoc is not provided, it defaults to CATIA.ActiveDocument.
+    ' Usage: Set prod = getActiveProduct()
+    If rootDoc Is Nothing Then Set rootDoc = CATIA.ActiveDocument
+    Set getActiveProduct = rootDoc.Product
+End Function
+
+Function getTopProduct(Optional ByRef rootDoc As Document = Nothing) As Product
+    ' Get the top-level (root) product in the assembly.
+    ' Returns the Product object at the root of the current CATIA document.
+    ' If rootDoc is not provided, it defaults to CATIA.ActiveDocument.
+    ' Useful for operations that need to start at the assembly root.
+    ' Usage: Set topProd = getTopProduct()
+    If rootDoc Is Nothing Then Set rootDoc = CATIA.ActiveDocument
+    Set getTopProduct = rootDoc.Product
+End Function
+
+Function getSelectedProduct(Optional ByRef rootSel As Selection = Nothing) As Product
+    ' Get the product currently selected by the user.
+    ' Returns the Product object corresponding to the first item in the current selection.
+    ' If rootSel is not provided, it defaults to CATIA.ActiveDocument.Selection.
+    ' If nothing is selected, returns Nothing.
+    ' Usage: Set selProd = getSelectedProduct()
+    If rootSel Is Nothing Then Set rootSel = CATIA.ActiveDocument.Selection
+    If rootSel.Count > 0 Then
+        Set getSelectedProduct = rootSel.Item(1).Value
+    Else
+        Set getSelectedProduct = Nothing
+    End If
+End Function
+
+Function getTemplateProduct(templateName As String) As Product
+    ' Get the product used as a template for operations.
+    ' Searches all open CATIA documents for one with the specified templateName.
+    ' Returns the Product object of the matching document, or Nothing if not found.
+    ' Useful for copying properties or structure from a template product.
+    ' Usage: Set templateProd = getTemplateProduct("TemplateProductName.CATProduct")
+    Dim prod As Product
+    Dim doc As Document
+    For Each doc In CATIA.Documents
+        If doc.Name = templateName Then
+            Set prod = doc.Product
+            Exit For
+        End If
+    Next
+    Set getTemplateProduct = prod
+End Function
+
+Sub handleMultipleSelections(selectedProds As Collection)
+    ' Handle scenarios where multiple products are selected.
+    ' Accepts a Collection of Product objects (selectedProds).
+    ' Iterates through each product and performs custom logic as needed.
+    ' This is a placeholder for batch operations on multiple selections.
+    ' Usage: Call handleMultipleSelections(selectedProds)
+    Dim prod As Product
+    For Each prod In selectedProds
+        ' Implement custom logic for each selected product here.
+    Next
+End Sub
+
+Function getUserInputString(prompt As String) As String
+    ' Prompt user for a string input.
+    ' Displays an InputBox with the provided prompt and returns the entered string.
+    ' Usage: userInput = getUserInputString("Enter the part name:")
+    getUserInputString = InputBox(prompt, "Input Required")
+End Function
+
+Function getUserInputNumber(prompt As String) As Double
+    ' Prompt user for a numeric input.
+    ' Displays an InputBox with the provided prompt and returns the entered value as Double.
+    ' If the input is not numeric, returns 0.
+    ' Usage: numValue = getUserInputNumber("Enter the quantity:")
+    Dim strInput As String
+    strInput = InputBox(prompt, "Input Required")
+    If IsNumeric(strInput) Then
+        getUserInputNumber = CDbl(strInput)
+    Else
+        getUserInputNumber = 0
+    End If
+End Function
+
+Function getUserInputBoolean(prompt As String) As Boolean
+    ' Prompt user for a Yes/No or True/False input.
+    ' Displays a message box with Yes/No buttons and returns True if Yes is selected, False otherwise.
+    ' Usage: isConfirmed = getUserInputBoolean("Do you want to proceed?")
+    Dim response As VbMsgBoxResult
+    response = MsgBox(prompt, vbYesNo + vbQuestion, "Please Confirm")
+    getUserInputBoolean = (response = vbYes)
+End Function
+
+Function getUserInputFilePath(prompt As String) As String
+    ' Prompt user to select a file path.
+    ' Opens a file picker dialog with the provided prompt as the title.
+    ' Returns the selected file path as a string, or an empty string if cancelled.
+    ' Requires reference to Microsoft Office library for FileDialog.
+    ' Usage: filePath = getUserInputFilePath("Select a file to import:")
+    Dim fd As FileDialog
+    Set fd = Application.FileDialog(msoFileDialogFilePicker)
+    fd.Title = prompt
+    If fd.Show = -1 Then
+        getUserInputFilePath = fd.SelectedItems(1)
+    Else
+        getUserInputFilePath = ""
+    End If
+End Function
+
+Function getUserInputFolderPath(prompt As String) As String
+    ' Prompt user to select a folder path.
+    ' Opens a folder picker dialog with the provided prompt as the title.
+    ' Returns the selected folder path as a string, or an empty string if cancelled.
+    ' Requires reference to Microsoft Office library for FileDialog.
+    ' Usage: folderPath = getUserInputFolderPath("Select a destination folder:")
+    Dim fd As FileDialog
+    Set fd = Application.FileDialog(msoFileDialogFolderPicker)
+    fd.Title = prompt
+    If fd.Show = -1 Then
+        getUserInputFolderPath = fd.SelectedItems(1)
+    Else
+        getUserInputFolderPath = ""
+    End If
+End Function
+
+Function getUserInputFromList(prompt As String, options As Variant) As Variant
+    ' Prompt user to select from a list of options.
+    ' Displays an InputBox with a numbered list of options.
+    ' Returns the selected option as a Variant, or an empty string if invalid selection.
+    ' The options parameter should be a 0-based array or Variant array.
+    ' Usage: selectedOption = getUserInputFromList("Choose a material:", Array("Steel", "Aluminum", "Plastic"))
+    Dim i As Integer, msg As String
+    msg = prompt & vbCrLf
+    For i = LBound(options) To UBound(options)
+        msg = msg & (i + 1) & ". " & options(i) & vbCrLf
+    Next
+    Dim sel As String
+    sel = InputBox(msg, "Select Option")
+    If IsNumeric(sel) And sel >= 1 And sel <= UBound(options) - LBound(options) + 1 Then
+        getUserInputFromList = options(CInt(sel) - 1)
+    Else
+        getUserInputFromList = ""
+    End If
+End Function
+
+Function getUserInputMultiSelect(prompt As String, options As Variant) As Collection
+    ' Prompt user to select multiple items from a list.
+    ' Displays an InputBox with a numbered list of options and instructions to enter numbers separated by commas.
+    ' Returns a Collection of selected options.
+    ' The options parameter should be a 0-based array or Variant array.
+    ' Usage: Set selectedItems = getUserInputMultiSelect("Select components:", Array("Bolt", "Nut", "Washer"))
+    Dim i As Integer, msg As String
+    Set getUserInputMultiSelect = New Collection
+    msg = prompt & vbCrLf
+    For i = LBound(options) To UBound(options)
+        msg = msg & (i + 1) & ". " & options(i) & vbCrLf
+    Next
+    msg = msg & vbCrLf & "Enter numbers separated by commas (e.g., 1,3,4):"
+    Dim sel As String, arr, idx
+    sel = InputBox(msg, "Select Multiple Options")
+    arr = Split(sel, ",")
+    For Each idx In arr
+        If IsNumeric(idx) Then
+            i = CInt(idx) - 1
+            If i >= LBound(options) And i <= UBound(options) Then
+                getUserInputMultiSelect.Add options(i)
+            End If
+        End If
+    Next
+End Function
+
+
 
 .' Helpers for assignProductData traversal mode:
 ' These specify which property to assign to the product during traversal.
