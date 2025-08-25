@@ -1,0 +1,95 @@
+Public Sub traverseProduct()
+
+    '--- Mode-specific state
+    Select Case traversalModes
+        'case getUniques
+        'case getInstances
+        'case getParts
+        'case getProducts
+        'case duplicateProduct
+        'case assignProductData
+    End Select
+
+    '--- Start BFS
+    q.Add root
+    Do While q.Count > 0
+        Set current = q(1): q.Remove 1
+        If Not current Is Nothing Then
+
+            ' Decide enqueue policy once per node
+            enqueueEarly = (mode = duplicateProduct)
+            enqueueLate  = (Not enqueueEarly)
+
+            If enqueueEarly Then
+                On Error Resume Next
+                Set kids = current.Products
+                If Err.Number = 0 And Not kids Is Nothing Then
+                    For i = 1 To kids.Count
+                        q.Add kids.Item(i)
+                    Next
+                End If
+                Err.Clear
+                On Error GoTo 0
+            End If
+
+            ' Resolve reference safely (some instance nodes may not resolve)
+            Set ref = Nothing
+            On Error Resume Next
+            Set ref = current.ReferenceProduct
+            On Error GoTo 0
+
+            If Not ref Is Nothing Then
+                '--- Dispatch per traversal mode to isolated handlers
+                Select Case mode
+                    'case getUniques
+                    'case getInstances
+                    'case getParts
+                    'case getProducts
+                    'case duplicateProduct
+                    'case assignProductData
+
+                End Select
+            End If
+
+            ' Enqueue children late for all modes EXCEPT DeepCopy (avoids double-enqueue)
+            If enqueueLate Then
+                On Error Resume Next
+                Set kids = current.Products
+                If Err.Number = 0 And Not kids Is Nothing Then
+                    For i = 1 To kids.Count
+                        q.Add kids.Item(i)
+                    Next
+                End If
+                Err.Clear
+                On Error GoTo 0
+            End If
+
+        End If
+    Loop
+End Sub
+
+' Determine reference document type from its owning Document name
+Private Function getRefDocType(ByVal ref As Product) As String
+    On Error Resume Next
+    Dim nm As String: nm = ref.Parent.Name  ' Document.Name (e.g., *.CATPart / *.CATProduct)
+    On Error GoTo 0
+    If InStr(1, nm, ".CATPart", vbTextCompare) > 0 Then
+        getRefDocType = "PartDocument"
+    ElseIf InStr(1, nm, ".CATProduct", vbTextCompare) > 0 Then
+        getRefDocType = "ProductDocument"
+    Else
+        getRefDocType = ""
+    End If
+End Function
+
+' Build a stable uniqueness key for a reference
+Private Function buildRefKey(ByVal ref As Product, ByVal docType As String) As String
+    ' Prefer PartNumber when available; Name can vary with instances.
+    Dim pn As String, nm As String
+    On Error Resume Next
+    pn = ref.PartNumber
+    nm = ref.Name
+    On Error GoTo 0
+    If pn = "" Then pn = nm
+    buildRefKey = docType & "|" & UCase$(Trim$(pn))
+End Function
