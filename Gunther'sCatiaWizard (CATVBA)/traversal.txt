@@ -59,26 +59,29 @@ End Enum
 
 
 Public Sub traverseProduct(ByVal mode As traversalModes, ByRef traversalParams As Collection)
-'--- Mode-specific state
-Dim mode As traversalModes
-Dim root As Product
-Dim q As Collection
-Dim current As Product
-Dim kids As Products
-Dim ref As Product
-Dim enqueueEarly As Boolean
-Dim enqueueLate As Boolean
-Dim i As Long
+    '--- Local variable declarations grouped at the top for readability
+    Dim q As Collection
+    Dim current As Product
+    Dim kids As Products
+    Dim ref As Product
+    Dim enqueueEarly As Boolean
+    Dim enqueueLate As Boolean
+    Dim i As Long
+    Dim paramKey As String
+    Dim root As Product
+
+    ' Initialize the queue and add the root node for BFS
+    Set q = New Collection
+    Set root = traversalParams("targetProd")
+    q.Add root
 
 Select Case mode
-
     ' --- Traversal parameter parsing system ---
     ' Each mode expects specific parameters in traversalParams (a Collection with key/value pairs).
     ' This block extracts and assigns those parameters to local variables for use in the traversal logic.
     ' If a required parameter is missing, an error is raised for easier debugging.
     ' All parameter extraction is wrapped in error handling for robustness.
 
-    Dim paramKey As String
     On Error GoTo ParamParseError
     Select Case mode
         Case tmCollectUniques
@@ -217,16 +220,14 @@ ParamParseError:
     Resume ParamParseDone
 
 ParamParseDone:
-
-'--- Start BFS  q.Add root
+'--- Start BFS: Add root node to queue
     Do While q.Count > 0
         Set current = q(1): q.Remove 1
-        If Not current Is Nothing Then
 
             ' Decide enqueue policy once per node
-            enqueueEarly = (mode = duplicateProduct)
+            ' Decide enqueue policy once per node
+            enqueueEarly = (mode = tmDuplicateProduct)
             enqueueLate  = (Not enqueueEarly)
-
             If enqueueEarly Then
                 On Error Resume Next
                 Set kids = current.Products
@@ -249,66 +250,248 @@ ParamParseDone:
                 '--- Dispatch per traversal mode to isolated handlers
                 Select Case mode
                     Case tmCollectUniques
-                        ' Add unique reference/product to uniqueProds if not already present.
-                        ' Use buildRefKey to generate a uniqueness key.
-                        ' If not in uniqueProdRefs, add to uniqueProdRefs and uniqueProds.
+                        ' Add unique reference/product to uniques if not already present.
+                        Dim docType As String: docType = getRefDocType(ref)
+                        Dim key As String: key = buildRefKey(ref, docType)
+                        Dim found As Boolean: found = False
+                        Dim item As Variant
+                        For Each item In uniqueProdRefs
+                            If item = key Then found = True: Exit For
+                        Next
+                        If Not found Then
+                            uniqueProdRefs.Add key
+                            uniqueProds.Add ref
+                            localUniques.Add ref
+                        End If
+
+
                     Case tmCollectAllInstances
                         ' Add every encountered product instance (including duplicates) to allInstances collection.
+                        allInstances.Add current
+                        localAllInstances.Add current
+
                     Case tmCollectParts
                         ' If current node is a part (not an assembly), add to uniqueParts and uniquePartRefs if not already present.
+                        If getRefDocType(ref) = "PartDocument" Then
+                            Dim partKey As String: partKey = buildRefKey(ref, "PartDocument")
+                            Dim partFound As Boolean: partFound = False
+                            For Each item In uniquePartRefs
+                                If item = partKey Then partFound = True: Exit For
+                            Next
+                            If Not partFound Then
+                                uniquePartRefs.Add partKey
+                                uniqueParts.Add ref
+                                localParts.Add ref
+                            End If
+                        End If
+
                     Case tmCollectProducts
                         ' If current node is an assembly (not a part), add to uniqueProds and uniqueProdRefs if not already present.
+                        If getRefDocType(ref) = "ProductDocument" Then
+                            Dim prodKey As String: prodKey = buildRefKey(ref, "ProductDocument")
+                            Dim prodFound As Boolean: prodFound = False
+                            For Each item In uniqueProdRefs
+                                If item = prodKey Then prodFound = True: Exit For
+                            Next
+                            If Not prodFound Then
+                                uniqueProdRefs.Add prodKey
+                                uniqueProds.Add ref
+                                localProducts.Add ref
+                            End If
+                        End If
+
                     Case tmDuplicateProduct
-                        ' Duplicate the current product and its structure.
-                        ' Create a new product, copy properties, and recursively duplicate children.
+                        ' --- Deep duplication logic with save to new directory ---
+                        ' 1. Duplicate the current product (node) using abDuplicateProduct
+                        ' 2. Track mapping from source to duplicated product
+                        ' 3. After children are duplicated, add them to the new parent
+                        ' 4. Assign new part numbers to avoid overwriting
+                        ' 5. Save each duplicated product/part to a new directory
+
+                        Static prodMap As Object
+                        Static saveDir As String
+                        Dim fso As Object
+                        If prodMap Is Nothing Then Set prodMap = CreateObject("Scripting.Dictionary")
+                        If saveDir = "" Then
+                            ' Determine save directory based on root product's file path
+                            Dim srcPath As String, srcFolder As String, srcName As String, timeStamp As String
+                            On Error Resume Next
+                            srcPath = current.Parent.FullName
+                            srcFolder = Left(srcPath, InStrRev(srcPath, "\") - 1)
+                            srcName = current.Parent.Name
+                            timeStamp = Format(Now, "dd-mm-yy_hh--nn--ss")
+                            saveDir = srcFolder & "\DUPLICATE_" & timeStamp
+                            Set fso = CreateObject("Scripting.FileSystemObject")
+                            If Not fso.FolderExists(saveDir) Then fso.CreateFolder saveDir
+                            Set fso = Nothing
+                            Else
+                                ' saveDir is already defined, use it directly
+                                ' (no action needed, just proceed to use saveDir)
+                            End If
+
+                        Dim newProd As Product
+                        Call abDuplicateProduct(current, newProd)
+                        prodMap(current) = newProd
+
+                        ' If current has children, add their duplicates to this new product
+                        On Error Resume Next
+                        Set kids = current.Products
+                        If Not kids Is Nothing And kids.Count > 0 Then
+                            Dim child As Product, childDup As Product
+                            For i = 1 To kids.Count
+                                Set child = kids.Item(i)
+                                If prodMap.Exists(child) Then
+                                    Set childDup = prodMap(child)
+                                    newProd.Products.Add childDup
+                                End If
+                            Next
+                        End If
+                        On Error GoTo 0
+
+                        ' Assign a new unique part number to avoid overwriting
+                        newProd.PartNumber = newProd.PartNumber & "_COPY_" & Format(Timer * 1000, "0")
+
+                        ' Save the duplicated product/part to the new directory
+                        On Error Resume Next
+                        Dim ext As String, saveName As String
+                        ext = ".CATProduct"
+                        If getRefDocType(newProd) = "PartDocument" Then ext = ".CATPart"
+                        saveName = saveDir & "\" & newProd.PartNumber & ext
+                        newProd.Parent.SaveAs saveName
+                        On Error GoTo 0
+
+                        ' Set the duplicatedProd output only for the root node
+                        If localDuplicatedProd Is Nothing Then Set localDuplicatedProd = newProd
+
                     Case tmAssignProductData
                         ' Assign specified property (based on assignType and value) to the current product using assignProductProperty.
+                        Call assignProductProperty(current, localAssignType, localAssignValue)
+
                     Case tmCopyTemplate
                         ' Copy relevant properties from the template product to the current product.
+                        ' This is a placeholder; actual property copy logic would be more complex.
+                        ' For now, just copy Name and PartNumber if template is provided.
+                        If Not localTemplate Is Nothing Then
+                            current.Name = localTemplate.Name
+                            current.PartNumber = localTemplate.PartNumber
+                        End If
+
                     Case tmCollectLeaves
                         ' If current node has no children, add to leaves collection.
+                        On Error Resume Next
+                        Set kids = current.Products
+                        If kids Is Nothing Or kids.Count = 0 Then
+                            localLeaves.Add current
+                        End If
+                        On Error GoTo 0
+
                     Case tmCollectAssemblies
                         ' If current node has children, add to assemblies collection.
+                        On Error Resume Next
+                        Set kids = current.Products
+                        If Not kids Is Nothing And kids.Count > 0 Then
+                            localAssemblies.Add current
+                        End If
+                        On Error GoTo 0
+
                     Case tmCollectByProperty
                         ' If current product's specified property matches the given value, add to matches collection.
+                        Dim propVal As Variant
+                        On Error Resume Next
+                        propVal = current.GetItem(localPropName)
+                        If propVal = localPropValue Then
+                            localMatches.Add current
+                        End If
+                        On Error GoTo 0
+
                     Case tmCollectByName
                         ' If current product's name matches the specified name, add to matches collection.
+                        If current.Name = localNameToMatch Then
+                            localMatches.Add current
+                        End If
+
                     Case tmCollectByPartNumber
                         ' If current product's part number matches the specified value, add to matches collection.
+                        If current.PartNumber = localPartNumberToMatch Then
+                            localMatches.Add current
+                        End If
+
                     Case tmCollectByCustomFilter
                         ' Call the custom filter function (by name) on current product.
                         ' If it returns True, add to matches collection.
+                        If VBA.CallByName(Application, localFilterFunc, VbMethod, current) = True Then
+                            localMatches.Add current
+                        End If
+
                     Case tmCountProducts
                         ' If current node is an assembly, increment the products counter.
+                        If getRefDocType(ref) = "ProductDocument" Then
+                            localProdCount = localProdCount + 1
+                        End If
+
                     Case tmCountParts
                         ' If current node is a part, increment the parts counter.
+                        If getRefDocType(ref) = "PartDocument" Then
+                            localPartCount = localPartCount + 1
+                        End If
+
                     Case tmLogTraversal
                         ' Log relevant information about the current node (e.g., name, type, path) to log file or debug window.
+                        Debug.Print "[Traversal] Name: " & current.Name & ", PartNumber: " & current.PartNumber
+
                     Case tmValidateStructure
                         ' Check for structural errors or inconsistencies in the current node.
                         ' If errors found, add to errorList and set isValid to False.
+                        If current.Name = "" Or current.PartNumber = "" Then
+                            localErrorList.Add "Missing name or part number for: " & current.Name
+                            localIsValid = False
+                        End If
+
                     Case tmCollectParents
                         ' Record the parent of the current node in the parents collection.
+                        If Not current.Parent Is Nothing Then
+                            localParents.Add current.Parent
+                        End If
+
                     Case tmCollectChildren
                         ' Record the children of the current node in the children collection.
+                        On Error Resume Next
+                        Set kids = current.Products
+                        If Not kids Is Nothing Then
+                            For i = 1 To kids.Count
+                                localChildren.Add kids.Item(i)
+                            Next
+                        End If
+                        On Error GoTo 0
+
                     Case tmCollectPaths
                         ' Record the path from root to the current node in the paths collection.
+                        ' Placeholder: just add current for now.
+                        localPaths.Add current
+
                     Case tmSaveAll
                         ' Save the current product/part document.
+                        On Error Resume Next
+                        current.Parent.Save
+                        On Error GoTo 0
+
                     Case tmSaveAsAll
                         ' Save the current product/part document with a new name.
-                    Case tmSendTo
-                        ' CATIA's native "Send To" functionality is not accessible from VBA.
-                        ' As an alternative, you can implement custom export/copy logic here,
-                        ' such as saving the document to a specified destination using SaveAs,
-                        ' or copying the file at the OS level if the document is saved.
-                        ' Example (pseudo-code):
-                        ' If Not destination = "" Then
-                        '     current.Parent.SaveAs destination & "\" & current.Parent.Name
-                        ' End If
-                End Select
+                        On Error Resume Next
+                        If localNewName <> "" Then
+                            current.Parent.SaveAs localNewName
+                        End If
+                        On Error GoTo 0
 
-            ' Enqueue children late for all modes EXCEPT DeepCopy (avoids double-enqueue)
+                    Case tmSendTo
+                        ' Custom export/copy logic: SaveAs to destination if provided.
+                        On Error Resume Next
+                        If localDestination <> "" Then
+                            current.Parent.SaveAs localDestination & "\" & current.Parent.Name
+                        End If
+                        On Error GoTo 0
+                End Select
+            ' Enqueue children late for all modes EXCEPT tmDuplicateProduct (avoids double-enqueue)
             If enqueueLate Then
                 On Error Resume Next
                 Set kids = current.Products
@@ -319,6 +502,7 @@ ParamParseDone:
                 End If
                 Err.Clear
                 On Error GoTo 0
+            End If
             End If
 
         End If
@@ -403,10 +587,10 @@ Sub duplicateProduct(Optional ByRef srcProd As Product = Nothing, Optional ByRef
     If srcProd Is Nothing Then Set srcProd = rootProd
     ' duplicatedProd is expected to be set by caller or remain Nothing
     Dim traverseParams As New Collection
+    Dim traverseParams As New Collection
     traverseParams.Add duplicatedProd, "duplicatedProd"   ' Required by traverseProduct
-    traverseParams.Add srcProd, "srcProd"
+    traverseParams.Add srcProd, "targetProd"
     Call traverseProduct(tmDuplicateProduct, traverseParams)
-End Sub
 
 ' 5. Assign property data to products during traversal
 Sub assignProductData(Optional ByRef targetProd As Product = Nothing, Optional assignType As assignProductDataHelpers = -1, Optional value As Variant = Empty)
@@ -834,8 +1018,7 @@ Function getUserInputMultiSelect(prompt As String, options As Variant) As Collec
 End Function
 
 
-
-ByRef tdProduct As Product, ByRef tdParams As Collection, Optional ByRef templateProduct As Product = Nothing)
+Sub generateTD(ByRef toolDesignProduct As Product, ByRef toolDesignParams As Collection, Optional ByRef templateProduct As Product = Nothing)
     ' Implementation for generating a tool design (TD)
     ' accepts the following arguments:
         'Required: tdProduct as product
@@ -847,30 +1030,145 @@ ByRef tdProduct As Product, ByRef tdParams As Collection, Optional ByRef templat
             ' seqOrSingle as boolean
         'Optional: templateProduct as product
 
-'
-' Logic Flow for generateTD:
-'   1. Validate required arguments:
-'       - Ensure tdProduct (Product) and tdParams (Collection) are provided.
-'   2. Parse tdParams collection for expected keys/values:
-'       - createNewProduct (Boolean): Whether to create a new product or use existing.
-'       - templateProduct (Product): Template to use for property/structure copying.
-'       - protectRefs (Boolean): Whether to protect reference links during duplication.
-'       - addSuffixToSel (Boolean): Whether to add a suffix to selected items.
-'       - seqOrSingle (Boolean): Whether to process sequentially or as a single operation.
-'   3. If createNewProduct is True:
-'       - Create a new product, optionally based on templateProduct.
-'       - Copy relevant properties and structure from templateProduct if provided.
-'   4. If protectRefs is True:
-'       - Ensure reference links are preserved or protected during duplication.
-'   5. If addSuffixToSel is True:
-'       - Add a suffix to the names or part numbers of selected items as needed.
-'   6. If seqOrSingle is True:
-'       - Process items in sequence; otherwise, process as a single batch.
-'   7. Perform main tool design generation logic:
-'       - Duplicate or modify product structure as required.
-'       - Assign properties, update references, and apply template as needed.
-'   8. Finalize and return or update the generated tool design product.
-'   9. Handle any errors or logging as appropriate.
-
+    ' Logic Flow for generateTD:
+    '   1. Validate required arguments:
+    '       - Ensure tdProduct (Product) and tdParams (Collection) are provided.
+    '   2. Parse tdParams collection for expected keys/values:
+    '       - createNewProduct (Boolean): Whether to create a new product or use existing.
+    '       - templateProduct (Product): Template to use for property/structure copying.
+    '       - protectRefs (Boolean): Whether to protect reference links during duplication.
+    '       - addSuffixToSel (Boolean): Whether to add a suffix to selected items.
+    '       - seqOrSingle (Boolean): Whether to process sequentially or as a single operation.
+    '   3. If createNewProduct is True:
+    '       - Create a new product, optionally based on templateProduct.
+    '       - Copy relevant properties and structure from templateProduct if provided.
+    '   4. If protectRefs is True:
+    '       - Ensure reference links are preserved or protected during duplication.
+    '   5. If addSuffixToSel is True:
+    '       - Add a suffix to the names or part numbers of selected items as needed.
+    '   6. If seqOrSingle is True:
+    '       - Process items in sequence; otherwise, process as a single batch.
+    '   7. Perform main tool design generation logic:
+    '       - Duplicate or modify product structure as required.
+    '       - Assign properties, update references, and apply template as needed.
+    '   8. Finalize and return or update the generated tool design product.
+    '   9. Handle any errors or logging as appropriate.
 
 End Sub
+'
+
+
+' Action Block: Deep Product Duplication
+' abDuplicateProduct - Duplicates a product and its structure recursively.
+' Arguments:
+'   srcProd (Product): The source product to duplicate
+'   duplicatedProd (Product): [ByRef] The resulting duplicated product (created by this function)
+'   Optional templateProd (Product): Template to use for property/structure copying (can be Nothing)
+'
+' Returns:
+'   Sets duplicatedProd to the new duplicated product.
+'
+' Usage:
+'   Call abDuplicateProduct(srcProd, duplicatedProd, [templateProd])
+'
+Public Sub abDuplicateProduct(ByRef srcProd As Product, ByRef duplicatedProd As Product, Optional ByRef templateProd As Product = Nothing)
+
+    ' Duplicate a single product (no recursion)
+    If srcProd Is Nothing Then
+        MsgBox "[abDuplicateProduct] Source product is Nothing.", vbCritical
+        Exit Sub
+    End If
+
+    ' Create a new product document and get its Product root, with error handling and optional template
+    Dim newDoc As Document
+    On Error GoTo CreateDocError
+    If Not templateProd Is Nothing Then
+        Set newDoc = CATIA.Documents.Add(templateProd.Parent.FullName)
+    Else
+        Set newDoc = CATIA.Documents.Add("Product")
+    End If
+    On Error GoTo 0
+    Set duplicatedProd = newDoc.Product
+    ' Copy basic properties from source (or template if provided), but NEVER copy PartNumber from template
+    Dim src As Product
+    If Not templateProd Is Nothing Then
+        Call copyProductProperties(templateProd, duplicatedProd, False) ' False = do not copy PartNumber
+    Else
+        Call copyProductProperties(srcProd, duplicatedProd, True) ' True = copy PartNumber from source
+    End If
+    ' Copy user-defined properties (if any)
+    On Error Resume Next
+    Dim srcParams As Parameters, destParams As Parameters, p As Parameter
+    Set srcParams = srcProd.Parameters
+    Set destParams = duplicatedProd.Parameters
+    If Not srcParams Is Nothing And Not destParams Is Nothing Then
+        For Each p In srcParams
+            If p.Name <> "" Then
+                Dim paramExists As Boolean
+                paramExists = False
+                Dim dp As Parameter
+                On Error Resume Next
+                For Each dp In destParams
+                    If dp.Name = p.Name Then
+                        paramExists = True
+                        Exit For
+                    End If
+                Next
+                On Error GoTo 0
+                If Not paramExists Then
+                    destParams.CreateString(p.Name, p.ValueAsString)
+                End If
+            End If
+        Next
+    End If
+    On Error GoTo 0
+    ' No recursion here! Let traverseProduct handle traversal.
+    Debug.Print "[abDuplicateProduct] Duplicated product: " & duplicatedProd.Name
+    Exit Sub
+CreateDocError:
+    MsgBox "Failed to create new product document. Please check template or CATIA settings." & vbCrLf & Err.Description, vbCritical
+    Exit Sub
+' Helper function: Copy properties from a source product to a destination product
+' If copyPartNumber is False, PartNumber will NOT be copied (for template usage)
+' Copies properties from src to dest.
+Public Sub copyProductProperties(ByRef src As Product, ByRef dest As Product, ByVal copyPartNumber As Boolean)
+
+    dest.Name = src.Name
+
+    If copyPartNumber Then
+        dest.PartNumber = src.PartNumber
+    End If
+
+    dest.Description = src.Description
+
+    dest.Nomenclature = src.Nomenclature
+
+    dest.Revision = src.Revision
+
+    dest.Source = src.Source
+
+    dest.Material = src.Material
+
+    dest.Manufacturer = src.Manufacturer
+
+    dest.Project = src.Project
+
+    ' Add more property copies as needed
+End Sub
+
+
+
+' Prompt the user to select or specify the template product for duplication or property copying
+' Returns the selected Product object, or Nothing if cancelled
+Public Function promptForTemplateProduct() As Product
+    Dim templateName As String
+    templateName = InputBox("Enter the name of the template product document (e.g., Template.CATProduct):", "Select Template Product")
+    If templateName = "" Then
+        Set promptForTemplateProduct = Nothing
+        Exit Function
+    End If
+    Set promptForTemplateProduct = getTemplateProduct(templateName)
+    If promptForTemplateProduct Is Nothing Then
+        MsgBox "Template product '" & templateName & "' not found among open documents.", vbExclamation
+    End If
+End Function
