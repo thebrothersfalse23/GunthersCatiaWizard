@@ -1,4 +1,3 @@
-
 ' Module-level variables for global state management
 ' These variables are declared as Public in a standard module (e.g., Globals.bas)
 ' to avoid passing them as arguments between functions/subs.
@@ -312,6 +311,17 @@ ParamParseDone:
                         Static saveDir As String
                         Dim fso As Object
                         If prodMap Is Nothing Then Set prodMap = CreateObject("Scripting.Dictionary")
+                        ' Check if saveDir is passed in traversalParams
+                        Dim paramSaveDir As String
+                        On Error Resume Next
+                        paramSaveDir = ""
+                        If Not traversalParams Is Nothing Then
+                            If traversalParams.Exists("saveDir") Then paramSaveDir = traversalParams("saveDir")
+                        End If
+                        On Error GoTo 0
+                        If paramSaveDir <> "" Then
+                            saveDir = paramSaveDir
+                        End If
                         If saveDir = "" Then
                             ' Determine save directory based on root product's file path
                             Dim srcPath As String, srcFolder As String, srcName As String, timeStamp As String
@@ -582,15 +592,14 @@ Sub collectProducts(Optional ByRef targetProd As Product = Nothing, Optional ByR
 End Sub
 
 ' 4. Duplicate a product and its structure
-Sub duplicateProduct(Optional ByRef srcProd As Product = Nothing, Optional ByRef duplicatedProd As Product = Nothing)
-    ' Ensures traversalParams is constructed with correct keys for tmDuplicateProduct
+Sub duplicateProduct(Optional ByRef srcProd As Product = Nothing, Optional ByRef duplicatedProd As Product = Nothing, Optional ByVal saveDir As String = "")
     If srcProd Is Nothing Then Set srcProd = rootProd
-    ' duplicatedProd is expected to be set by caller or remain Nothing
     Dim traverseParams As New Collection
-    Dim traverseParams As New Collection
-    traverseParams.Add duplicatedProd, "duplicatedProd"   ' Required by traverseProduct
+    traverseParams.Add duplicatedProd, "duplicatedProd"
     traverseParams.Add srcProd, "targetProd"
+    If saveDir <> "" Then traverseParams.Add saveDir, "saveDir"
     Call traverseProduct(tmDuplicateProduct, traverseParams)
+End Sub
 
 ' 5. Assign property data to products during traversal
 Sub assignProductData(Optional ByRef targetProd As Product = Nothing, Optional assignType As assignProductDataHelpers = -1, Optional value As Variant = Empty)
