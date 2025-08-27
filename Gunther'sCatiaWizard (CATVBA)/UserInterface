@@ -1,0 +1,543 @@
+' -----------------------------------------------------------------------------
+' This module dynamically creates a MultiPage wizard interface for the UserForm.
+' It demonstrates how to add pages and controls at runtime, and provides a
+' navigation system (Next/Back) for moving between wizard steps.
+'
+' HOW TO EXPAND:
+' - To add more wizard steps, add more pages to the MultiPage control.
+' - To add more controls to a page, use the Controls.Add method on the page.
+' - To add logic for new controls, declare them as module-level variables if you
+'   need to access them outside initialization.
+' - Navigation logic is handled by btnNext_Click and btnBack_Click.
+' - All controls are created at runtime for maximum flexibility.
+' - All page visibility is managed manually for a true wizard experience.
+'
+' NOTE: This code can live in a standard module. It references a concrete
+' UserForm named "UserForm1". If you put it in the form’s code-behind instead,
+' you can swap "ui" for "Me" and remove the "ui" variable entirely.
+' ============================================================================
+
+Option Explicit
+
+' -----------------------------------------------------------------------------
+' Module-level Control Declarations
+' These variables hold references to controls that need to be accessed
+' outside of initialization (e.g., for event handling or dynamic updates).
+' -----------------------------------------------------------------------------
+Public lblWelcome As MSForms.Label                   ' Label on the Welcome page
+Public btnLaunch As MSForms.CommandButton            ' Launch button on Welcome
+Public multiPage As MSForms.multiPage                ' The MultiPage wizard
+Public pageWelcome As MSForms.Page                   ' Reference to Page 0
+Public btnNext As MSForms.CommandButton              ' Next navigation button
+Public btnBack As MSForms.CommandButton              ' Back navigation button
+Public wizardLaunchStatus As Boolean
+
+Public ui As UserForm1                               ' The UI instance
+
+Private Const MARGIN As Single = 10
+
+' Holds the event sinks alive so they don't get garbage collected
+Private gButtonSinks As Collection
+
+
+
+' Safely compute a MultiPage "client" width/height even when ClientWidth/Height
+' are not exposed by the host (e.g., CATIA MSForms).
+Private Sub GetMultiPageClientSize(mp As MSForms.multiPage, ByRef w As Single, ByRef h As Single)
+    Dim tabH As Single
+
+    w = 0: h = 0
+
+    On Error Resume Next
+    ' Try client area first (some hosts expose these)
+    w = mp.ClientWidth
+    h = mp.ClientHeight
+
+    If Err.Number <> 0 Or w <= 0 Or h <= 0 Then
+        ' Fall back to outer size minus tabs/borders
+        Err.Clear
+        w = mp.Width - 12          ' border/inner padding allowance
+        tabH = 0
+        tabH = mp.TabFixedHeight   ' if 0, default tab height applies
+        If tabH <= 0 Then tabH = 22
+        h = mp.Height - (tabH + 12)
+    End If
+    On Error GoTo 0
+
+    If w < 0 Then w = 0
+    If h < 0 Then h = 0
+End Sub
+
+Public Sub showUI()
+    If multiPage Is Nothing Then initUI
+    ui.Show
+End Sub
+
+Public Sub initUI()
+    If ui Is Nothing Then Set ui = New UserForm1
+
+    With ui
+        .Width = 560      ' <- tweak as you like
+        .Height = 440
+        .Caption = "Gunther's Catia Wizard"
+    End With
+    
+    wizardLaunchStatus = False
+    
+    ' === 1. Create the MultiPage wizard control ===
+        Set multiPage = ui.Controls.Add("Forms.MultiPage.1", "multiPage", True)
+        Const PAD As Single = 12, NAV_H As Single = 24, NAV_GAP As Single = 10
+    
+        ' Get usable form area (works even if InsideWidth/Height aren't exposed)
+        Dim formW As Single, formH As Single
+        On Error Resume Next
+        formW = ui.InsideWidth
+        formH = ui.InsideHeight
+        If Err.Number <> 0 Or formW <= 0 Or formH <= 0 Then
+            Err.Clear
+            formW = ui.Width - 12
+            formH = ui.Height - 38    ' rough allowance for title/borders
+        End If
+        On Error GoTo 0
+        
+        With multiPage
+            .Left = PAD
+            .Top = PAD
+            .Width = formW - 2 * PAD
+            ' leave room at the bottom for Back/Next buttons
+            .Height = formH - (PAD + NAV_GAP + NAV_H + PAD)
+    
+            ' Add three pages (add more here for more steps)
+            .Pages.Add
+            .Pages.Add
+            .Pages.Add
+    
+            .Pages(0).Caption = "Launch Pad -- Welcome Page"
+            .Pages(1).Caption = "Tool Design"
+            .Pages(2).Caption = "Documentation"
+        End With
+
+    ' === 2. Populate the Tool Design page with examples ===
+        Dim pageToolDesign As MSForms.Page
+        Set pageToolDesign = multiPage.Pages(1)
+    
+        ' --- Add a Frame to the Tool Design page to enable scrolling ---
+        Dim frmScroll As MSForms.Frame
+        Set frmScroll = pageToolDesign.Controls.Add("Forms.Frame.1", "frmScroll", True)
+    
+        ' Size the scroll frame to the MultiPage client area (robust to host)
+        Dim mp As MSForms.multiPage
+        Set mp = pageToolDesign.Parent
+    
+        Dim clientW As Single, clientH As Single
+        GetMultiPageClientSize mp, clientW, clientH
+    
+        With frmScroll
+            .Caption = vbNullString
+            .Left = 0
+            .Top = 0
+            .Width = clientW - MARGIN
+            .Height = clientH - MARGIN
+    
+            ' scrolling
+            .ScrollBars = fmScrollBarsVertical
+            .KeepScrollBarsVisible = fmScrollBarsVertical   ' keep vertical bar visible
+            .SpecialEffect = fmSpecialEffectFlat
+        End With
+    
+        ' --- Arrange all controls in a single vertical line inside the Frame ---
+        Dim ctrlTop As Single
+        ctrlTop = 12
+    
+        ' Example Label (static text)
+        Dim lblExample As MSForms.Label
+        Set lblExample = frmScroll.Controls.Add("Forms.Label.1", "lblExample", True)
+        With lblExample
+            .Caption = "Example Label: Tool Name"
+            .Left = 20
+            .Top = ctrlTop
+            .Width = 200
+        End With
+        ctrlTop = ctrlTop + lblExample.Height + 12
+    
+        ' Example TextBox (user input)
+        Dim txtExample As MSForms.TextBox
+        Set txtExample = frmScroll.Controls.Add("Forms.TextBox.1", "txtExample", True)
+        With txtExample
+            .Left = 20
+            .Top = ctrlTop
+            .Width = 200
+        End With
+        ctrlTop = ctrlTop + txtExample.Height + 12
+    
+        ' Example ComboBox (dropdown selection)
+        Dim cmbExample As MSForms.ComboBox
+        Set cmbExample = frmScroll.Controls.Add("Forms.ComboBox.1", "cmbExample", True)
+        With cmbExample
+            .Left = 20
+            .Top = ctrlTop
+            .Width = 200
+            .AddItem "Option 1"
+            .AddItem "Option 2"
+            .AddItem "Option 3"
+        End With
+        ctrlTop = ctrlTop + cmbExample.Height + 12
+    
+        ' Example CheckBox (boolean selection)
+        Dim chkExample As MSForms.CheckBox
+        Set chkExample = frmScroll.Controls.Add("Forms.CheckBox.1", "chkExample", True)
+        With chkExample
+            .Caption = "Example CheckBox"
+            .Left = 20
+            .Top = ctrlTop
+        End With
+        ctrlTop = ctrlTop + chkExample.Height + 12
+    
+        ' Example OptionButtons (mutually exclusive choices)
+        Dim optExample1 As MSForms.OptionButton
+        Dim optExample2 As MSForms.OptionButton
+        Set optExample1 = frmScroll.Controls.Add("Forms.OptionButton.1", "optExample1", True)
+        Set optExample2 = frmScroll.Controls.Add("Forms.OptionButton.1", "optExample2", True)
+    
+        With optExample1
+            .Caption = "Option 1"
+            .Left = 20
+            .Top = ctrlTop
+        End With
+        ctrlTop = ctrlTop + optExample1.Height + 4
+    
+        With optExample2
+            .Caption = "Option 2"
+            .Left = 20
+            .Top = ctrlTop
+        End With
+        ctrlTop = ctrlTop + optExample2.Height + 12
+    
+        ' Example ListBox (list selection)
+        Dim lstExample As MSForms.ListBox
+        Set lstExample = frmScroll.Controls.Add("Forms.ListBox.1", "lstExample", True)
+        With lstExample
+            .Left = 20
+            .Top = ctrlTop
+            .Width = 200
+            .Height = 50
+            .AddItem "List Item 1"
+            .AddItem "List Item 2"
+            .AddItem "List Item 3"
+        End With
+        ctrlTop = ctrlTop + lstExample.Height + 12
+    
+        ' Example CommandButton (action button)
+        Dim btnExample As MSForms.CommandButton
+        Set btnExample = frmScroll.Controls.Add("Forms.CommandButton.1", "btnExample", True)
+        With btnExample
+            .Caption = "Example Button"
+            .Left = 20
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + btnExample.Height + 12
+    
+        ' Add Run button to the bottom of the Tool Design page (inside the scrollable frame)
+        Dim btnRunToolDesign As MSForms.CommandButton
+        Set btnRunToolDesign = frmScroll.Controls.Add("Forms.CommandButton.1", "btnRunToolDesign", True)
+        With btnRunToolDesign
+            .Caption = "Run"
+            .Left = 20
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + btnRunToolDesign.Height + 12
+    
+        ' Make the frame actually scroll to fit all the added content
+        If ctrlTop + 12 > frmScroll.ScrollHeight Then
+            frmScroll.ScrollHeight = ctrlTop + 12
+        End If
+    
+        ' === 3. Reference to Welcome page (Page 0) for later use ===
+        Set pageWelcome = multiPage.Pages(0)
+    
+        ' === 4. Hide all pages except the Welcome page at startup ===
+        Dim i As Long
+        For i = 0 To multiPage.Pages.count - 1
+            multiPage.Pages(i).Visible = False
+        Next i
+        multiPage.Pages(0).Visible = True
+        multiPage.value = 0
+
+    ' === 5–6. Welcome content (title/tagline centered; instructions/note left; CTA centered) ===
+        Dim lblWelcomeTitle As MSForms.Label
+        Dim lblWelcomeSub As MSForms.Label
+        Dim lblInstrHead As MSForms.Label
+        Dim lblInstr As MSForms.Label
+        Dim lblNote As MSForms.Label
+        Dim lblCTA As MSForms.Label
+        Dim w As Single
+        w = multiPage.Width - 2 * PAD
+        ctrlTop = 20
+        
+        ' Title (centered)
+        Set lblWelcomeTitle = pageWelcome.Controls.Add("Forms.Label.1", "lblWelcomeTitle", True)
+        With lblWelcomeTitle
+            .Caption = "Welcome to Gunther's Catia Wizard"
+            .Left = PAD
+            .Top = ctrlTop
+            .Width = w
+            .Height = 20
+            .TextAlign = fmTextAlignCenter
+            .Font.Bold = True
+            .Font.Size = 15
+        End With
+        ctrlTop = ctrlTop + lblWelcomeTitle.Height + 6
+        
+        ' Tagline (centered)
+        Set lblWelcomeSub = pageWelcome.Controls.Add("Forms.Label.1", "lblWelcomeSub", True)
+        With lblWelcomeSub
+            .Caption = "This wizard was designed to minimize manual infrastructure processing."
+            .Left = PAD
+            .Top = ctrlTop
+            .Width = w
+            .Height = 12
+            .TextAlign = fmTextAlignCenter
+            .Font.Size = 10
+        End With
+        ctrlTop = ctrlTop + lblWelcomeSub.Height + 12
+        
+        ' Instructions header (left)
+        Set lblInstrHead = pageWelcome.Controls.Add("Forms.Label.1", "lblInstrHead", True)
+        With lblInstrHead
+            .Caption = "Instructions:"
+            .Left = PAD
+            .Top = ctrlTop
+            .Width = w
+            .Height = 15
+            .TextAlign = fmTextAlignLeft
+            .Font.Bold = True
+            .Font.Size = 12
+        End With
+        ctrlTop = ctrlTop + lblInstrHead.Height + 4
+        
+        ' Instructions list (left, wrapped)
+        Set lblInstr = pageWelcome.Controls.Add("Forms.Label.1", "lblInstr", True)
+        With lblInstr
+            .Caption = "1.) Ensure the top product is active and selected." & vbCrLf & _
+                       "2.) Click Launch to verify system prerequisites" & vbCrLf & _
+                       "3.) Use the wizard to configure the desired infrastructure modifications."
+            .Left = PAD
+            .Top = ctrlTop
+            .Width = w
+            .Height = 45   ' ~3 lines
+            .WordWrap = True
+            .TextAlign = fmTextAlignLeft
+            .Font.Size = 12
+        End With
+        ctrlTop = ctrlTop + lblInstr.Height + 12
+        
+        ' Note (left, wrapped)
+        Set lblNote = pageWelcome.Controls.Add("Forms.Label.1", "lblNote", True)
+        With lblNote
+            .Caption = "Note: Design-mode is required for proper operation. You may do this before launching the wizard, or it will be done automatically when you click ""Launch"". Some delay is expected and Catia may freeze, but do not exit the program until the wizard is launched."
+            .Left = PAD
+            .Top = ctrlTop
+            .Width = w
+            .Height = 72   ' tweak if you see clipping
+            .WordWrap = True
+            .TextAlign = fmTextAlignLeft
+            .Font.Size = 12
+        End With
+        ctrlTop = ctrlTop + lblNote.Height + 12
+        
+        ' CTA (centered)
+        Set lblCTA = pageWelcome.Controls.Add("Forms.Label.1", "lblCTA", True)
+        With lblCTA
+            .Caption = "Click 'Launch' to begin and click 'Cancel' to close the wizard."
+            .Left = PAD
+            .Top = ctrlTop
+            .Width = w
+            .Height = 18
+            .TextAlign = fmTextAlignCenter
+        End With
+        ctrlTop = ctrlTop + lblCTA.Height + 16
+        
+        
+        Dim tmp As MSForms.Control
+        On Error Resume Next
+        Set tmp = pageWelcome.Controls("btnLaunch")
+        On Error GoTo 0
+        
+        If tmp Is Nothing Then
+            Set btnLaunch = pageWelcome.Controls.Add("Forms.CommandButton.1", "btnLaunch", True)
+            With btnLaunch
+                .Caption = "Launch"
+                .Width = 80
+                .Height = 28
+            End With
+        Else
+            Set btnLaunch = tmp
+        End If
+        
+        ' Center under the CTA line (uses margin/w/ctrlTop from the welcome block)
+        With btnLaunch
+            .Left = PAD + (w - .Width) / 2
+            .Top = ctrlTop
+            .Visible = True
+        End With
+        
+    ' === 7. Add Next and Back navigation buttons to the UserForm (not inside MultiPage) ===
+        Set btnBack = ui.Controls.Add("Forms.CommandButton.1", "btnBack", True)
+        With btnBack
+            .Caption = "Back"
+            .Width = 60
+            .Height = 24
+            .Left = multiPage.Left
+            .Top = multiPage.Top + multiPage.Height + 10
+            .Visible = False                     ' Hide Back on Welcome
+        End With
+        
+        Set btnNext = ui.Controls.Add("Forms.CommandButton.1", "btnNext", True)
+        With btnNext
+            .Caption = "Next"
+            .Width = 60
+            .Height = 24
+            .Left = multiPage.Left + multiPage.Width - .Width
+            .Top = multiPage.Top + multiPage.Height + 10
+            .Visible = False                     ' Hide Next on Welcome (page 0)
+        End With
+        
+        ' --- Hook the click events for Launch/Next/Back (after they all exist) ---
+        If gButtonSinks Is Nothing Then Set gButtonSinks = New Collection
+        
+        Dim s As CButtonSink
+        
+        On Error Resume Next                ' ignore duplicate keys if initUI runs twice
+        Set s = New CButtonSink: Set s.Btn = btnLaunch: gButtonSinks.Add s, btnLaunch.Name
+        Set s = New CButtonSink: Set s.Btn = btnNext:   gButtonSinks.Add s, btnNext.Name
+        Set s = New CButtonSink: Set s.Btn = btnBack:   gButtonSinks.Add s, btnBack.Name
+        On Error GoTo 0
+End Sub
+
+
+' ---------------------------------------------------------------------------
+' Input Handlers for Tool Design Page Controls
+' ---------------------------------------------------------------------------
+
+' Handles changes in the txtExample TextBox
+Public Sub txtExample_Change()
+    Dim pageToolDesign As MSForms.Page
+    Set pageToolDesign = multiPage.Pages(1)
+    Dim txtExample As MSForms.TextBox
+    Set txtExample = pageToolDesign.Controls("txtExample")
+    ' Example: Show value in a message box (replace with your logic)
+    ' MsgBox "TextBox changed: " & txtExample.Text
+End Sub
+
+' Handles selection changes in the cmbExample ComboBox
+Public Sub cmbExample_Change()
+    Dim pageToolDesign As MSForms.Page
+    Set pageToolDesign = multiPage.Pages(1)
+    Dim cmbExample As MSForms.ComboBox
+    Set cmbExample = pageToolDesign.Controls("cmbExample")
+    ' Example: Show selected item (replace with your logic)
+    ' MsgBox "ComboBox selected: " & cmbExample.Value
+End Sub
+
+' Handles checking/unchecking of chkExample CheckBox
+Public Sub chkExample_Click()
+    Dim pageToolDesign As MSForms.Page
+    Set pageToolDesign = multiPage.Pages(1)
+    Dim chkExample As MSForms.CheckBox
+    Set chkExample = pageToolDesign.Controls("chkExample")
+    ' Example: Show checked state (replace with your logic)
+    ' MsgBox "CheckBox checked: " & chkExample.Value
+End Sub
+
+' Handles selection of optExample1 OptionButton
+Public Sub optExample1_Click()
+    Dim pageToolDesign As MSForms.Page
+    Set pageToolDesign = multiPage.Pages(1)
+    Dim optExample1 As MSForms.OptionButton
+    Set optExample1 = pageToolDesign.Controls("optExample1")
+    ' Example: Show if selected (replace with your logic)
+    ' MsgBox "Option 1 selected: " & optExample1.Value
+End Sub
+
+' Handles selection of optExample2 OptionButton
+Public Sub optExample2_Click()
+    Dim pageToolDesign As MSForms.Page
+    Set pageToolDesign = multiPage.Pages(1)
+    Dim optExample2 As MSForms.OptionButton
+    Set optExample2 = pageToolDesign.Controls("optExample2")
+    ' Example: Show if selected (replace with your logic)
+    ' MsgBox "Option 2 selected: " & optExample2.Value
+End Sub
+
+' Handles selection changes in the lstExample ListBox
+Public Sub lstExample_Click()
+    Dim pageToolDesign As MSForms.Page
+    Set pageToolDesign = multiPage.Pages(1)
+    Dim lstExample As MSForms.ListBox
+    Set lstExample = pageToolDesign.Controls("lstExample")
+    ' Example: Show selected item (replace with your logic)
+    ' If lstExample.ListIndex >= 0 Then
+    '     MsgBox "ListBox selected: " & lstExample.List(lstExample.ListIndex)
+    ' End If
+End Sub
+
+' Handles clicks on the btnExample CommandButton
+Public Sub btnExample_Click()
+    Dim pageToolDesign As MSForms.Page
+    Set pageToolDesign = multiPage.Pages(1)
+    Dim btnExample As MSForms.CommandButton
+    Set btnExample = pageToolDesign.Controls("btnExample")
+    ' Example: Show message (replace with your logic)
+    ' MsgBox "Example Button clicked!"
+End Sub
+
+
+' -----------------------------------------------------------------------------
+' btnNext_Click: Advances the wizard to the next page
+' -----------------------------------------------------------------------------
+Public Sub btnNext_Click()
+    Dim curPage As Long
+    curPage = multiPage.value
+    If curPage < multiPage.Pages.count - 1 Then
+        multiPage.Pages(curPage).Visible = False
+        multiPage.Pages(curPage + 1).Visible = True
+        multiPage.value = curPage + 1
+    End If
+    btnBack.Visible = (multiPage.value > 0)
+    btnNext.Visible = wizardLaunchStatus And (multiPage.value < multiPage.Pages.count - 1)
+        
+End Sub
+
+' -----------------------------------------------------------------------------
+' btnBack_Click: Moves the wizard to the previous page
+' -----------------------------------------------------------------------------
+Public Sub btnBack_Click()
+    Dim curPage As Long
+    curPage = multiPage.value
+    If curPage > 0 Then
+        multiPage.Pages(curPage).Visible = False
+        multiPage.Pages(curPage - 1).Visible = True
+        multiPage.value = curPage - 1
+    End If
+    btnBack.Visible = (multiPage.value > 0)
+    btnNext.Visible = wizardLaunchStatus And (multiPage.value < multiPage.Pages.count - 1)
+End Sub
+
+
+Public Sub btnLaunch_Click()
+    ' Correct MsgBox syntax (no parentheses unless using Call or assigning result)
+    MsgBox "runAllGuards Placeholder"
+
+    ' Hide Welcome (page 0), show Tool Design (page 1)
+    multiPage.Pages(0).Visible = False
+    multiPage.Pages(1).Visible = True
+    multiPage.value = 1
+    ' Update nav buttons (hide Next on Welcome only)
+    wizardLaunchStatus = True
+    btnBack.Visible = (multiPage.value > 0)
+    btnNext.Visible = wizardLaunchStatus And (multiPage.value < multiPage.Pages.count - 1)
+End Sub
+
+
