@@ -1,0 +1,35 @@
+'Module: globalVarsModule
+'This is where all of our global vars will live.
+
+
+Public Function declareGlobalVars() As Boolean
+    Dim rootDoc As Document           ' CATIA.activeDocument
+    Dim rootProd As Product           ' CATIA.activeDocument.Product
+    Dim rootSel As Selection          ' CATIA.activeDocument.Selection
+    Dim currentProd As Product        ' The currently processed product object.
+    Dim selectedProds As Collection   ' Collection of product objects selected by the user or process.
+    Dim templateProd As Product       ' The product object used as a template for creating new products.
+    Dim uniqueProdRefs As Collection  ' Collection of unique product reference identifiers.
+    Dim uniqueProds As Collection     ' Collection of unique product objects (no duplicates).
+    Dim uniquePartRefs As Collection  ' Collection of unique part reference identifiers.
+    Dim uniqueParts As Collection     ' Collection of unique part objects (no duplicates).
+    Dim allProdRefs As Collection     ' Collection of all product reference identifiers in the structure.
+    Dim allProds As Collection        ' Collection of all product objects in the structure.
+    Dim allUniques As Collection      ' Collection of all unique objects (products and/or parts).
+    Dim allInstances As Collection    ' Collection of all product or part instances in the assembly.
+    Dim partDocs As Collection        ' Collection of document objects corresponding to parts.
+    Dim prodDocs As Collection        ' Collection of document objects corresponding to products.
+    Dim allPartNumbers As Collection  ' Collection of all part numbers in the structure.
+    Dim allNames As Collection        ' Collection of all product/part names in the structure.
+    Dim allDescriptions As Collection ' Collection of all descriptions in the structure.
+    Dim errorLog As Collection        ' Collection of error messages or logs for debugging.
+    Dim processedNodes As Collection  ' Collection of already processed nodes/products to avoid cycles.
+    Dim parentProds As Collection     ' Collection of parent product objects for hierarchy tracking.
+    Dim childProds As Collection      ' Collection of child product objects for hierarchy tracking.
+    Dim userInputs As Collection      ' Collection of user input values for session tracking.
+    Dim tempCache As Collection       ' Temporary cache for intermediate results during processing.
+    MsgBox ("initialized global vars")
+    declareGlobalVars = True
+    
+End Function
+
