@@ -1,0 +1,12 @@
+'== Class: CButtonSink ==
+Option Explicit
+Public WithEvents Btn As MSForms.CommandButton
+
+Private Sub Btn_Click()
+    Select Case Btn.Name
+        Case "btnNext": btnNext_Click
+        Case "btnBack": btnBack_Click
+        Case "btnLaunch": btnLaunch_Click
+    End Select
+End Sub
+
