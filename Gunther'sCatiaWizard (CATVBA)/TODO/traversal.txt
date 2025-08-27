@@ -99,6 +99,25 @@ Public Sub traverseProduct(ByVal mode As traversalModes, ByRef traversalParams A
     Dim localPaths As Collection
     Dim localNewName As String
     Dim localDestination As String
+    
+    '--- BFS traversal variables
+    Dim docType As String
+    Dim key As String
+    Dim found As Boolean
+    Dim item As Variant
+    Dim partKey As String
+    Dim partFound As Boolean
+    Dim prodKey As String
+    Dim prodFound As Boolean
+    Dim propVal As Variant
+    
+    '--- tmDuplicateProduct variables
+    Dim fso As Object
+    Dim paramSaveDir As String
+    Dim srcPath As String, srcFolder As String, srcName As String, timeStamp As String
+    Dim newProd As Product
+    Dim child As Product, childDup As Product
+    Dim ext As String, saveName As String
 
     ' Initialize the queue and add the root node for BFS
     Set q = New Collection
@@ -251,10 +270,9 @@ ParamParseDone:
                 Select Case mode
                     Case tmCollectUniques
                         ' Add unique reference/product to uniques if not already present.
-                        Dim docType As String: docType = getRefDocType(ref)
-                        Dim key As String: key = buildRefKey(ref, docType)
-                        Dim found As Boolean: found = False
-                        Dim item As Variant
+                        docType = getRefDocType(ref)
+                        key = buildRefKey(ref, docType)
+                        found = False
                         For Each item In uniqueProdRefs
                             If item = key Then found = True: Exit For
                         Next
@@ -273,8 +291,8 @@ ParamParseDone:
                     Case tmCollectParts
                         ' If current node is a part (not an assembly), add to uniqueParts and uniquePartRefs if not already present.
                         If getRefDocType(ref) = "PartDocument" Then
-                            Dim partKey As String: partKey = buildRefKey(ref, "PartDocument")
-                            Dim partFound As Boolean: partFound = False
+                            partKey = buildRefKey(ref, "PartDocument")
+                            partFound = False
                             For Each item In uniquePartRefs
                                 If item = partKey Then partFound = True: Exit For
                             Next
@@ -288,8 +306,8 @@ ParamParseDone:
                     Case tmCollectProducts
                         ' If current node is an assembly (not a part), add to uniqueProds and uniqueProdRefs if not already present.
                         If getRefDocType(ref) = "ProductDocument" Then
-                            Dim prodKey As String: prodKey = buildRefKey(ref, "ProductDocument")
-                            Dim prodFound As Boolean: prodFound = False
+                            prodKey = buildRefKey(ref, "ProductDocument")
+                            prodFound = False
                             For Each item In uniqueProdRefs
                                 If item = prodKey Then prodFound = True: Exit For
                             Next
@@ -310,10 +328,8 @@ ParamParseDone:
 
                         Static prodMap As Object
                         Static saveDir As String
-                        Dim fso As Object
                         If prodMap Is Nothing Then Set prodMap = CreateObject("Scripting.Dictionary")
                         ' Check if saveDir is passed in traversalParams
-                        Dim paramSaveDir As String
                         On Error Resume Next
                         paramSaveDir = ""
                         If Not traversalParams Is Nothing Then
@@ -325,7 +341,6 @@ ParamParseDone:
                         End If
                         If saveDir = "" Then
                             ' Determine save directory based on root product's file path
-                            Dim srcPath As String, srcFolder As String, srcName As String, timeStamp As String
                             On Error Resume Next
                             srcPath = current.Parent.FullName
                             srcFolder = Left(srcPath, InStrRev(srcPath, "\") - 1)
@@ -338,7 +353,6 @@ ParamParseDone:
                             On Error GoTo 0
                         End If
 
-                        Dim newProd As Product
                         Call abDuplicateProduct(current, newProd)
                         prodMap(current) = newProd
 
@@ -346,7 +360,6 @@ ParamParseDone:
                         On Error Resume Next
                         Set kids = current.Products
                         If Not kids Is Nothing And kids.Count > 0 Then
-                            Dim child As Product, childDup As Product
                             For i = 1 To kids.Count
                                 Set child = kids.Item(i)
                                 If prodMap.Exists(child) Then
@@ -362,7 +375,6 @@ ParamParseDone:
 
                         ' Save the duplicated product/part to the new directory
                         On Error Resume Next
-                        Dim ext As String, saveName As String
                         ext = ".CATProduct"
                         If getRefDocType(newProd) = "PartDocument" Then ext = ".CATPart"
                         saveName = saveDir & "\" & newProd.PartNumber & ext
@@ -405,7 +417,6 @@ ParamParseDone:
 
                     Case tmCollectByProperty
                         ' If current product's specified property matches the given value, add to matches collection.
-                        Dim propVal As Variant
                         On Error Resume Next
                         propVal = current.GetItem(localPropName)
                         If propVal = localPropValue Then
