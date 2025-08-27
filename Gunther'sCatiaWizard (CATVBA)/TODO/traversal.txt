@@ -68,13 +68,43 @@ Public Sub traverseProduct(ByVal mode As traversalModes, ByRef traversalParams A
     Dim i As Long
     Dim paramKey As String
     Dim root As Product
+    
+    '--- Parameter variables for all modes
+    Dim localUniques As Collection
+    Dim localAllInstances As Collection
+    Dim localParts As Collection
+    Dim localProducts As Collection
+    Dim localDuplicatedProd As Product
+    Dim localAssignType As assignProductDataHelpers
+    Dim localAssignValue As Variant
+    Dim localTemplate As Product
+    Dim localLeaves As Collection
+    Dim localAssemblies As Collection
+    Dim localPropName As String
+    Dim localPropValue As Variant
+    Dim localMatches As Collection
+    Dim localNameToMatch As String
+    Dim localNameMatches As Collection
+    Dim localPartNumberToMatch As String
+    Dim localPartMatches As Collection
+    Dim localFilterFunc As String
+    Dim localCustomMatches As Collection
+    Dim localProdCount As Long
+    Dim localPartCount As Long
+    Dim localLogFilePath As String
+    Dim localIsValid As Boolean
+    Dim localErrorList As Collection
+    Dim localParents As Collection
+    Dim localChildren As Collection
+    Dim localPaths As Collection
+    Dim localNewName As String
+    Dim localDestination As String
 
     ' Initialize the queue and add the root node for BFS
     Set q = New Collection
     Set root = traversalParams("targetProd")
     q.Add root
 
-Select Case mode
     ' --- Traversal parameter parsing system ---
     ' Each mode expects specific parameters in traversalParams (a Collection with key/value pairs).
     ' This block extracts and assigns those parameters to local variables for use in the traversal logic.
@@ -85,116 +115,89 @@ Select Case mode
     Select Case mode
         Case tmCollectUniques
             ' Expects: "uniques" (Collection)
-            Dim localUniques As Collection
             Set localUniques = traversalParams("uniques")
 
         Case tmCollectAllInstances
             ' Expects: "allInstances" (Collection)
-            Dim localAllInstances As Collection
             Set localAllInstances = traversalParams("allInstances")
 
         Case tmCollectParts
             ' Expects: "parts" (Collection)
-            Dim localParts As Collection
             Set localParts = traversalParams("parts")
 
         Case tmCollectProducts
             ' Expects: "products" (Collection)
-            Dim localProducts As Collection
             Set localProducts = traversalParams("products")
 
         Case tmDuplicateProduct
             ' Expects: "duplicatedProd" (Product)
-            Dim localDuplicatedProd As Product
             Set localDuplicatedProd = traversalParams("duplicatedProd")
 
         Case tmAssignProductData
             ' Expects: "assignType" (assignProductDataHelpers), "value" (Variant)
-            Dim localAssignType As assignProductDataHelpers
-            Dim localAssignValue As Variant
             localAssignType = traversalParams("assignType")
             localAssignValue = traversalParams("value")
 
         Case tmCopyTemplate
             ' Expects: "template" (Product)
-            Dim localTemplate As Product
             Set localTemplate = traversalParams("template")
 
         Case tmCollectLeaves
             ' Expects: "leaves" (Collection)
-            Dim localLeaves As Collection
             Set localLeaves = traversalParams("leaves")
 
         Case tmCollectAssemblies
             ' Expects: "assemblies" (Collection)
-            Dim localAssemblies As Collection
             Set localAssemblies = traversalParams("assemblies")
 
         Case tmCollectByProperty
             ' Expects: "propName" (String), "propValue" (Variant), "matches" (Collection)
-            Dim localPropName As String
-            Dim localPropValue As Variant
-            Dim localMatches As Collection
             localPropName = traversalParams("propName")
             localPropValue = traversalParams("propValue")
             Set localMatches = traversalParams("matches")
 
         Case tmCollectByName
             ' Expects: "nameToMatch" (String), "matches" (Collection)
-            Dim localNameToMatch As String
-            Dim localMatches As Collection
             localNameToMatch = traversalParams("nameToMatch")
-            Set localMatches = traversalParams("matches")
+            Set localNameMatches = traversalParams("matches")
 
         Case tmCollectByPartNumber
             ' Expects: "partNumber" (String), "matches" (Collection)
-            Dim localPartNumberToMatch As String
-            Dim localMatches As Collection
             localPartNumberToMatch = traversalParams("partNumber")
-            Set localMatches = traversalParams("matches")
+            Set localPartMatches = traversalParams("matches")
 
         Case tmCollectByCustomFilter
             ' Expects: "filterFunc" (String), "matches" (Collection)
-            Dim localFilterFunc As String
-            Dim localMatches As Collection
             localFilterFunc = traversalParams("filterFunc")
-            Set localMatches = traversalParams("matches")
+            Set localCustomMatches = traversalParams("matches")
 
         Case tmCountProducts
             ' Expects: "count" (Long, ByRef)
-            Dim localProdCount As Long
             localProdCount = traversalParams("count")
 
         Case tmCountParts
             ' Expects: "count" (Long, ByRef)
-            Dim localPartCount As Long
             localPartCount = traversalParams("count")
 
         Case tmLogTraversal
             ' Expects: "logFilePath" (String)
-            Dim localLogFilePath As String
             localLogFilePath = traversalParams("logFilePath")
 
         Case tmValidateStructure
             ' Expects: "isValid" (Boolean, ByRef), "errorList" (Collection)
-            Dim localIsValid As Boolean
-            Dim localErrorList As Collection
             localIsValid = traversalParams("isValid")
             Set localErrorList = traversalParams("errorList")
 
         Case tmCollectParents
             ' Expects: "parents" (Collection)
-            Dim localParents As Collection
             Set localParents = traversalParams("parents")
 
         Case tmCollectChildren
             ' Expects: "children" (Collection)
-            Dim localChildren As Collection
             Set localChildren = traversalParams("children")
 
         Case tmCollectPaths
             ' Expects: "paths" (Collection)
-            Dim localPaths As Collection
             Set localPaths = traversalParams("paths")
 
         Case tmSaveAll
@@ -202,12 +205,10 @@ Select Case mode
 
         Case tmSaveAsAll
             ' Expects: "newName" (String)
-            Dim localNewName As String
             localNewName = traversalParams("newName")
 
         Case tmSendTo
             ' Expects: "destination" (String)
-            Dim localDestination As String
             localDestination = traversalParams("destination")
     End Select
     On Error GoTo 0
@@ -334,10 +335,8 @@ ParamParseDone:
                             Set fso = CreateObject("Scripting.FileSystemObject")
                             If Not fso.FolderExists(saveDir) Then fso.CreateFolder saveDir
                             Set fso = Nothing
-                            Else
-                                ' saveDir is already defined, use it directly
-                                ' (no action needed, just proceed to use saveDir)
-                            End If
+                            On Error GoTo 0
+                        End If
 
                         Dim newProd As Product
                         Call abDuplicateProduct(current, newProd)
@@ -417,20 +416,20 @@ ParamParseDone:
                     Case tmCollectByName
                         ' If current product's name matches the specified name, add to matches collection.
                         If current.Name = localNameToMatch Then
-                            localMatches.Add current
+                            localNameMatches.Add current
                         End If
 
                     Case tmCollectByPartNumber
                         ' If current product's part number matches the specified value, add to matches collection.
                         If current.PartNumber = localPartNumberToMatch Then
-                            localMatches.Add current
+                            localPartMatches.Add current
                         End If
 
                     Case tmCollectByCustomFilter
                         ' Call the custom filter function (by name) on current product.
                         ' If it returns True, add to matches collection.
                         If VBA.CallByName(Application, localFilterFunc, VbMethod, current) = True Then
-                            localMatches.Add current
+                            localCustomMatches.Add current
                         End If
 
                     Case tmCountProducts
@@ -501,21 +500,20 @@ ParamParseDone:
                         End If
                         On Error GoTo 0
                 End Select
-            ' Enqueue children late for all modes EXCEPT tmDuplicateProduct (avoids double-enqueue)
-            If enqueueLate Then
-                On Error Resume Next
-                Set kids = current.Products
-                If Err.Number = 0 And Not kids Is Nothing Then
-                    For i = 1 To kids.Count
-                        q.Add kids.Item(i)
-                    Next
+                
+                ' Enqueue children late for all modes EXCEPT tmDuplicateProduct (avoids double-enqueue)
+                If enqueueLate Then
+                    On Error Resume Next
+                    Set kids = current.Products
+                    If Err.Number = 0 And Not kids Is Nothing Then
+                        For i = 1 To kids.Count
+                            q.Add kids.Item(i)
+                        Next
+                    End If
+                    Err.Clear
+                    On Error GoTo 0
                 End If
-                Err.Clear
-                On Error GoTo 0
             End If
-            End If
-
-        End If
     Loop
 End Sub
 
@@ -1137,6 +1135,8 @@ Public Sub abDuplicateProduct(ByRef srcProd As Product, ByRef duplicatedProd As 
 CreateDocError:
     MsgBox "Failed to create new product document. Please check template or CATIA settings." & vbCrLf & Err.Description, vbCritical
     Exit Sub
+End Sub
+
 ' Helper function: Copy properties from a source product to a destination product
 ' If copyPartNumber is False, PartNumber will NOT be copied (for template usage)
 ' Copies properties from src to dest.
