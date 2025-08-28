@@ -7,6 +7,7 @@ Private Sub Btn_Click()
         Case "btnNext": btnNext_Click
         Case "btnBack": btnBack_Click
         Case "btnLaunch": btnLaunch_Click
+        Case "btnRunToolDesign": btnRunToolDesign_Click
     End Select
 End Sub
 

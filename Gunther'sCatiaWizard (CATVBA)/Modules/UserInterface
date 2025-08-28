@@ -30,6 +30,7 @@ Public multiPage As MSForms.multiPage                ' The MultiPage wizard
 Public pageWelcome As MSForms.Page                   ' Reference to Page 0
 Public btnNext As MSForms.CommandButton              ' Next navigation button
 Public btnBack As MSForms.CommandButton              ' Back navigation button
+Public btnRunToolDesign As MSForms.CommandButton    ' Run Tool Design button
 Public wizardLaunchStatus As Boolean
 
 Public ui As UserForm1                               ' The UI instance
@@ -117,7 +118,7 @@ Public Sub initUI()
             .Pages(2).Caption = "Documentation"
         End With
 
-    ' === 2. Populate the Tool Design page with examples ===
+    ' === 2. Populate the Tool Design page with real controls ===
         Dim pageToolDesign As MSForms.Page
         Set pageToolDesign = multiPage.Pages(1)
     
@@ -145,110 +146,374 @@ Public Sub initUI()
             .SpecialEffect = fmSpecialEffectFlat
         End With
     
-        ' --- Arrange all controls in a single vertical line inside the Frame ---
-        Dim ctrlTop As Single
+        ' --- Arrange all controls in organized sections inside the Frame ---
+        Dim ctrlTop As Single, leftMargin As Single, rightColumn As Single
         ctrlTop = 12
-    
-        ' Example Label (static text)
-        Dim lblExample As MSForms.Label
-        Set lblExample = frmScroll.Controls.Add("Forms.Label.1", "lblExample", True)
-        With lblExample
-            .Caption = "Example Label: Tool Name"
-            .Left = 20
+        leftMargin = 20
+        rightColumn = 260
+        
+        ' === TOOL DESIGN PARAMETERS SECTION ===
+        Dim lblTDHeader As MSForms.Label
+        Set lblTDHeader = frmScroll.Controls.Add("Forms.Label.1", "lblTDHeader", True)
+        With lblTDHeader
+            .Caption = "Tool Design Parameters"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 200
+            .Font.Bold = True
+            .Font.Size = 11
+        End With
+        ctrlTop = ctrlTop + lblTDHeader.Height + 8
+        
+        ' Create New Product checkbox
+        Dim chkCreateNewProduct As MSForms.CheckBox
+        Set chkCreateNewProduct = frmScroll.Controls.Add("Forms.CheckBox.1", "chkCreateNewProduct", True)
+        With chkCreateNewProduct
+            .Caption = "Create New Product"
+            .Left = leftMargin + 10
+            .Top = ctrlTop
+            .Width = 150
+        End With
+        ctrlTop = ctrlTop + chkCreateNewProduct.Height + 4
+        
+        ' Protect References checkbox
+        Dim chkProtectRefs As MSForms.CheckBox
+        Set chkProtectRefs = frmScroll.Controls.Add("Forms.CheckBox.1", "chkProtectRefs", True)
+        With chkProtectRefs
+            .Caption = "Protect References"
+            .Left = leftMargin + 10
+            .Top = ctrlTop
+            .Width = 150
+        End With
+        ctrlTop = ctrlTop + chkProtectRefs.Height + 4
+        
+        ' Add Suffix to Selection checkbox
+        Dim chkAddSuffixToSel As MSForms.CheckBox
+        Set chkAddSuffixToSel = frmScroll.Controls.Add("Forms.CheckBox.1", "chkAddSuffixToSel", True)
+        With chkAddSuffixToSel
+            .Caption = "Add Suffix to Selection"
+            .Left = leftMargin + 10
+            .Top = ctrlTop
+            .Width = 170
+        End With
+        ctrlTop = ctrlTop + chkAddSuffixToSel.Height + 4
+        
+        ' Sequential or Single processing checkbox
+        Dim chkSeqOrSingle As MSForms.CheckBox
+        Set chkSeqOrSingle = frmScroll.Controls.Add("Forms.CheckBox.1", "chkSeqOrSingle", True)
+        With chkSeqOrSingle
+            .Caption = "Sequential Processing (vs Single)"
+            .Left = leftMargin + 10
             .Top = ctrlTop
             .Width = 200
         End With
-        ctrlTop = ctrlTop + lblExample.Height + 12
-    
-        ' Example TextBox (user input)
-        Dim txtExample As MSForms.TextBox
-        Set txtExample = frmScroll.Controls.Add("Forms.TextBox.1", "txtExample", True)
-        With txtExample
-            .Left = 20
+        ctrlTop = ctrlTop + chkSeqOrSingle.Height + 16
+        
+        ' === TRAVERSAL MODE SELECTION ===
+        Dim lblTraversalHeader As MSForms.Label
+        Set lblTraversalHeader = frmScroll.Controls.Add("Forms.Label.1", "lblTraversalHeader", True)
+        With lblTraversalHeader
+            .Caption = "Traversal Mode"
+            .Left = leftMargin
             .Top = ctrlTop
-            .Width = 200
+            .Width = 120
+            .Font.Bold = True
+            .Font.Size = 11
         End With
-        ctrlTop = ctrlTop + txtExample.Height + 12
-    
-        ' Example ComboBox (dropdown selection)
-        Dim cmbExample As MSForms.ComboBox
-        Set cmbExample = frmScroll.Controls.Add("Forms.ComboBox.1", "cmbExample", True)
-        With cmbExample
-            .Left = 20
+        ctrlTop = ctrlTop + lblTraversalHeader.Height + 4
+        
+        ' Traversal Mode ComboBox
+        Dim cmbTraversalMode As MSForms.ComboBox
+        Set cmbTraversalMode = frmScroll.Controls.Add("Forms.ComboBox.1", "cmbTraversalMode", True)
+        With cmbTraversalMode
+            .Left = leftMargin
             .Top = ctrlTop
-            .Width = 200
-            .AddItem "Option 1"
-            .AddItem "Option 2"
-            .AddItem "Option 3"
+            .Width = 220
+            .AddItem "tmCollectUniques - Collect unique products"
+            .AddItem "tmCollectAllInstances - Collect all instances"
+            .AddItem "tmCollectParts - Collect parts only"
+            .AddItem "tmCollectProducts - Collect products only"
+            .AddItem "tmDuplicateProduct - Duplicate product structure"
+            .AddItem "tmAssignProductData - Assign property data"
+            .AddItem "tmCopyTemplate - Copy from template"
+            .AddItem "tmCollectLeaves - Collect leaf products"
+            .AddItem "tmCollectAssemblies - Collect assemblies"
+            .AddItem "tmCollectByProperty - Collect by property value"
+            .AddItem "tmCollectByName - Collect by name"
+            .AddItem "tmCollectByPartNumber - Collect by part number"
+            .AddItem "tmCollectByCustomFilter - Collect by custom filter"
+            .AddItem "tmCountProducts - Count products"
+            .AddItem "tmCountParts - Count parts"
+            .AddItem "tmLogTraversal - Log traversal steps"
+            .AddItem "tmValidateStructure - Validate structure"
+            .AddItem "tmCollectParents - Collect parent products"
+            .AddItem "tmCollectChildren - Collect child products"
+            .AddItem "tmCollectPaths - Collect paths"
+            .AddItem "tmSaveAll - Save all"
+            .AddItem "tmSaveAsAll - Save all with new name"
+            .AddItem "tmSendTo - Send to destination"
+            .ListIndex = 0
         End With
-        ctrlTop = ctrlTop + cmbExample.Height + 12
-    
-        ' Example CheckBox (boolean selection)
-        Dim chkExample As MSForms.CheckBox
-        Set chkExample = frmScroll.Controls.Add("Forms.CheckBox.1", "chkExample", True)
-        With chkExample
-            .Caption = "Example CheckBox"
-            .Left = 20
+        ctrlTop = ctrlTop + cmbTraversalMode.Height + 16
+        
+        ' === TRAVERSAL PARAMETERS SECTION ===
+        Dim lblParamsHeader As MSForms.Label
+        Set lblParamsHeader = frmScroll.Controls.Add("Forms.Label.1", "lblParamsHeader", True)
+        With lblParamsHeader
+            .Caption = "Traversal Parameters"
+            .Left = leftMargin
             .Top = ctrlTop
+            .Width = 150
+            .Font.Bold = True
+            .Font.Size = 11
         End With
-        ctrlTop = ctrlTop + chkExample.Height + 12
-    
-        ' Example OptionButtons (mutually exclusive choices)
-        Dim optExample1 As MSForms.OptionButton
-        Dim optExample2 As MSForms.OptionButton
-        Set optExample1 = frmScroll.Controls.Add("Forms.OptionButton.1", "optExample1", True)
-        Set optExample2 = frmScroll.Controls.Add("Forms.OptionButton.1", "optExample2", True)
-    
-        With optExample1
-            .Caption = "Option 1"
-            .Left = 20
+        ctrlTop = ctrlTop + lblParamsHeader.Height + 8
+        
+        ' Property Name input (for tmCollectByProperty)
+        Dim lblPropertyName As MSForms.Label
+        Set lblPropertyName = frmScroll.Controls.Add("Forms.Label.1", "lblPropertyName", True)
+        With lblPropertyName
+            .Caption = "Property Name:"
+            .Left = leftMargin
             .Top = ctrlTop
+            .Width = 100
         End With
-        ctrlTop = ctrlTop + optExample1.Height + 4
-    
-        With optExample2
-            .Caption = "Option 2"
-            .Left = 20
-            .Top = ctrlTop
-        End With
-        ctrlTop = ctrlTop + optExample2.Height + 12
-    
-        ' Example ListBox (list selection)
-        Dim lstExample As MSForms.ListBox
-        Set lstExample = frmScroll.Controls.Add("Forms.ListBox.1", "lstExample", True)
-        With lstExample
-            .Left = 20
-            .Top = ctrlTop
-            .Width = 200
-            .Height = 50
-            .AddItem "List Item 1"
-            .AddItem "List Item 2"
-            .AddItem "List Item 3"
-        End With
-        ctrlTop = ctrlTop + lstExample.Height + 12
-    
-        ' Example CommandButton (action button)
-        Dim btnExample As MSForms.CommandButton
-        Set btnExample = frmScroll.Controls.Add("Forms.CommandButton.1", "btnExample", True)
-        With btnExample
-            .Caption = "Example Button"
-            .Left = 20
+        
+        Dim txtPropertyName As MSForms.TextBox
+        Set txtPropertyName = frmScroll.Controls.Add("Forms.TextBox.1", "txtPropertyName", True)
+        With txtPropertyName
+            .Left = rightColumn - 40
             .Top = ctrlTop
             .Width = 120
         End With
-        ctrlTop = ctrlTop + btnExample.Height + 12
-    
+        ctrlTop = ctrlTop + txtPropertyName.Height + 8
+        
+        ' Property Value input (for tmCollectByProperty)
+        Dim lblPropertyValue As MSForms.Label
+        Set lblPropertyValue = frmScroll.Controls.Add("Forms.Label.1", "lblPropertyValue", True)
+        With lblPropertyValue
+            .Caption = "Property Value:"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 100
+        End With
+        
+        Dim txtPropertyValue As MSForms.TextBox
+        Set txtPropertyValue = frmScroll.Controls.Add("Forms.TextBox.1", "txtPropertyValue", True)
+        With txtPropertyValue
+            .Left = rightColumn - 40
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + txtPropertyValue.Height + 8
+        
+        ' Name to Match input (for tmCollectByName)
+        Dim lblNameToMatch As MSForms.Label
+        Set lblNameToMatch = frmScroll.Controls.Add("Forms.Label.1", "lblNameToMatch", True)
+        With lblNameToMatch
+            .Caption = "Name to Match:"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 100
+        End With
+        
+        Dim txtNameToMatch As MSForms.TextBox
+        Set txtNameToMatch = frmScroll.Controls.Add("Forms.TextBox.1", "txtNameToMatch", True)
+        With txtNameToMatch
+            .Left = rightColumn - 40
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + txtNameToMatch.Height + 8
+        
+        ' Part Number input (for tmCollectByPartNumber)
+        Dim lblPartNumber As MSForms.Label
+        Set lblPartNumber = frmScroll.Controls.Add("Forms.Label.1", "lblPartNumber", True)
+        With lblPartNumber
+            .Caption = "Part Number:"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 100
+        End With
+        
+        Dim txtPartNumber As MSForms.TextBox
+        Set txtPartNumber = frmScroll.Controls.Add("Forms.TextBox.1", "txtPartNumber", True)
+        With txtPartNumber
+            .Left = rightColumn - 40
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + txtPartNumber.Height + 8
+        
+        ' Custom Filter Function input (for tmCollectByCustomFilter)
+        Dim lblFilterFunc As MSForms.Label
+        Set lblFilterFunc = frmScroll.Controls.Add("Forms.Label.1", "lblFilterFunc", True)
+        With lblFilterFunc
+            .Caption = "Filter Function:"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 100
+        End With
+        
+        Dim txtFilterFunc As MSForms.TextBox
+        Set txtFilterFunc = frmScroll.Controls.Add("Forms.TextBox.1", "txtFilterFunc", True)
+        With txtFilterFunc
+            .Left = rightColumn - 40
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + txtFilterFunc.Height + 16
+        
+        ' === PROPERTY ASSIGNMENT SECTION ===
+        Dim lblAssignHeader As MSForms.Label
+        Set lblAssignHeader = frmScroll.Controls.Add("Forms.Label.1", "lblAssignHeader", True)
+        With lblAssignHeader
+            .Caption = "Property Assignment (for tmAssignProductData)"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 280
+            .Font.Bold = True
+            .Font.Size = 11
+        End With
+        ctrlTop = ctrlTop + lblAssignHeader.Height + 8
+        
+        ' Assignment Type ComboBox
+        Dim lblAssignType As MSForms.Label
+        Set lblAssignType = frmScroll.Controls.Add("Forms.Label.1", "lblAssignType", True)
+        With lblAssignType
+            .Caption = "Assign Type:"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 100
+        End With
+        
+        Dim cmbAssignType As MSForms.ComboBox
+        Set cmbAssignType = frmScroll.Controls.Add("Forms.ComboBox.1", "cmbAssignType", True)
+        With cmbAssignType
+            .Left = rightColumn - 40
+            .Top = ctrlTop
+            .Width = 150
+            .AddItem "assignPN - Part Number"
+            .AddItem "assignName - Name"
+            .AddItem "assignDescription - Description"
+            .AddItem "assignReference - Reference"
+            .AddItem "assignTemplate - Template"
+            .AddItem "assignSource - Source"
+            .AddItem "assignNomenclature - Nomenclature"
+            .AddItem "assignRevision - Revision"
+            .AddItem "assignMaterial - Material"
+            .AddItem "assignColor - Color"
+            .AddItem "assignQuantity - Quantity"
+            .AddItem "assignCustomProperty - Custom Property"
+            .AddItem "assignMass - Mass"
+            .AddItem "assignVolume - Volume"
+            .AddItem "assignDensity - Density"
+            .AddItem "assignManufacturer - Manufacturer"
+            .AddItem "assignProject - Project"
+            .ListIndex = 0
+        End With
+        ctrlTop = ctrlTop + cmbAssignType.Height + 8
+        
+        ' Assignment Value input
+        Dim lblAssignValue As MSForms.Label
+        Set lblAssignValue = frmScroll.Controls.Add("Forms.Label.1", "lblAssignValue", True)
+        With lblAssignValue
+            .Caption = "Assign Value:"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 100
+        End With
+        
+        Dim txtAssignValue As MSForms.TextBox
+        Set txtAssignValue = frmScroll.Controls.Add("Forms.TextBox.1", "txtAssignValue", True)
+        With txtAssignValue
+            .Left = rightColumn - 40
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + txtAssignValue.Height + 16
+        
+        ' === FILE/PATH PARAMETERS SECTION ===
+        Dim lblFileHeader As MSForms.Label
+        Set lblFileHeader = frmScroll.Controls.Add("Forms.Label.1", "lblFileHeader", True)
+        With lblFileHeader
+            .Caption = "File/Path Parameters"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 150
+            .Font.Bold = True
+            .Font.Size = 11
+        End With
+        ctrlTop = ctrlTop + lblFileHeader.Height + 8
+        
+        ' Log File Path input (for tmLogTraversal)
+        Dim lblLogFilePath As MSForms.Label
+        Set lblLogFilePath = frmScroll.Controls.Add("Forms.Label.1", "lblLogFilePath", True)
+        With lblLogFilePath
+            .Caption = "Log File Path:"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 100
+        End With
+        
+        Dim txtLogFilePath As MSForms.TextBox
+        Set txtLogFilePath = frmScroll.Controls.Add("Forms.TextBox.1", "txtLogFilePath", True)
+        With txtLogFilePath
+            .Left = rightColumn - 40
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + txtLogFilePath.Height + 8
+        
+        ' New Name input (for tmSaveAsAll)
+        Dim lblNewName As MSForms.Label
+        Set lblNewName = frmScroll.Controls.Add("Forms.Label.1", "lblNewName", True)
+        With lblNewName
+            .Caption = "New Name:"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 100
+        End With
+        
+        Dim txtNewName As MSForms.TextBox
+        Set txtNewName = frmScroll.Controls.Add("Forms.TextBox.1", "txtNewName", True)
+        With txtNewName
+            .Left = rightColumn - 40
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + txtNewName.Height + 8
+        
+        ' Destination Path input (for tmSendTo)
+        Dim lblDestination As MSForms.Label
+        Set lblDestination = frmScroll.Controls.Add("Forms.Label.1", "lblDestination", True)
+        With lblDestination
+            .Caption = "Destination:"
+            .Left = leftMargin
+            .Top = ctrlTop
+            .Width = 100
+        End With
+        
+        Dim txtDestination As MSForms.TextBox
+        Set txtDestination = frmScroll.Controls.Add("Forms.TextBox.1", "txtDestination", True)
+        With txtDestination
+            .Left = rightColumn - 40
+            .Top = ctrlTop
+            .Width = 120
+        End With
+        ctrlTop = ctrlTop + txtDestination.Height + 16
+        
         ' Add Run button to the bottom of the Tool Design page (inside the scrollable frame)
-        Dim btnRunToolDesign As MSForms.CommandButton
         Set btnRunToolDesign = frmScroll.Controls.Add("Forms.CommandButton.1", "btnRunToolDesign", True)
         With btnRunToolDesign
-            .Caption = "Run"
-            .Left = 20
+            .Caption = "Run Tool Design"
+            .Left = leftMargin
             .Top = ctrlTop
-            .Width = 120
+            .Width = 140
+            .Height = 32
         End With
         ctrlTop = ctrlTop + btnRunToolDesign.Height + 12
-    
+        
         ' Make the frame actually scroll to fit all the added content
         If ctrlTop + 12 > frmScroll.ScrollHeight Then
             frmScroll.ScrollHeight = ctrlTop + 12
@@ -404,7 +669,7 @@ Public Sub initUI()
             .Visible = False                     ' Hide Next on Welcome (page 0)
         End With
         
-        ' --- Hook the click events for Launch/Next/Back (after they all exist) ---
+        ' --- Hook the click events for Launch/Next/Back/RunToolDesign (after they all exist) ---
         If gButtonSinks Is Nothing Then Set gButtonSinks = New Collection
         
         Dim s As CButtonSink
@@ -413,6 +678,7 @@ Public Sub initUI()
         Set s = New CButtonSink: Set s.Btn = btnLaunch: gButtonSinks.Add s, btnLaunch.Name
         Set s = New CButtonSink: Set s.Btn = btnNext:   gButtonSinks.Add s, btnNext.Name
         Set s = New CButtonSink: Set s.Btn = btnBack:   gButtonSinks.Add s, btnBack.Name
+        Set s = New CButtonSink: Set s.Btn = btnRunToolDesign: gButtonSinks.Add s, btnRunToolDesign.Name
         On Error GoTo 0
 End Sub
 
@@ -421,76 +687,117 @@ End Sub
 ' Input Handlers for Tool Design Page Controls
 ' ---------------------------------------------------------------------------
 
-' Handles changes in the txtExample TextBox
-Public Sub txtExample_Change()
-    Dim pageToolDesign As MSForms.Page
-    Set pageToolDesign = multiPage.Pages(1)
-    Dim txtExample As MSForms.TextBox
-    Set txtExample = pageToolDesign.Controls("txtExample")
-    ' Example: Show value in a message box (replace with your logic)
-    ' MsgBox "TextBox changed: " & txtExample.Text
+' Handles changes in traversal mode selection
+Public Sub cmbTraversalMode_Change()
+    ' This could be used to show/hide relevant parameter controls
+    ' based on the selected traversal mode
 End Sub
 
-' Handles selection changes in the cmbExample ComboBox
-Public Sub cmbExample_Change()
+' Handles clicks on the Run Tool Design button
+Public Sub btnRunToolDesign_Click()
     Dim pageToolDesign As MSForms.Page
     Set pageToolDesign = multiPage.Pages(1)
-    Dim cmbExample As MSForms.ComboBox
-    Set cmbExample = pageToolDesign.Controls("cmbExample")
-    ' Example: Show selected item (replace with your logic)
-    ' MsgBox "ComboBox selected: " & cmbExample.Value
-End Sub
-
-' Handles checking/unchecking of chkExample CheckBox
-Public Sub chkExample_Click()
-    Dim pageToolDesign As MSForms.Page
-    Set pageToolDesign = multiPage.Pages(1)
-    Dim chkExample As MSForms.CheckBox
-    Set chkExample = pageToolDesign.Controls("chkExample")
-    ' Example: Show checked state (replace with your logic)
-    ' MsgBox "CheckBox checked: " & chkExample.Value
-End Sub
-
-' Handles selection of optExample1 OptionButton
-Public Sub optExample1_Click()
-    Dim pageToolDesign As MSForms.Page
-    Set pageToolDesign = multiPage.Pages(1)
-    Dim optExample1 As MSForms.OptionButton
-    Set optExample1 = pageToolDesign.Controls("optExample1")
-    ' Example: Show if selected (replace with your logic)
-    ' MsgBox "Option 1 selected: " & optExample1.Value
-End Sub
-
-' Handles selection of optExample2 OptionButton
-Public Sub optExample2_Click()
-    Dim pageToolDesign As MSForms.Page
-    Set pageToolDesign = multiPage.Pages(1)
-    Dim optExample2 As MSForms.OptionButton
-    Set optExample2 = pageToolDesign.Controls("optExample2")
-    ' Example: Show if selected (replace with your logic)
-    ' MsgBox "Option 2 selected: " & optExample2.Value
-End Sub
-
-' Handles selection changes in the lstExample ListBox
-Public Sub lstExample_Click()
-    Dim pageToolDesign As MSForms.Page
-    Set pageToolDesign = multiPage.Pages(1)
-    Dim lstExample As MSForms.ListBox
-    Set lstExample = pageToolDesign.Controls("lstExample")
-    ' Example: Show selected item (replace with your logic)
-    ' If lstExample.ListIndex >= 0 Then
-    '     MsgBox "ListBox selected: " & lstExample.List(lstExample.ListIndex)
-    ' End If
-End Sub
-
-' Handles clicks on the btnExample CommandButton
-Public Sub btnExample_Click()
-    Dim pageToolDesign As MSForms.Page
-    Set pageToolDesign = multiPage.Pages(1)
-    Dim btnExample As MSForms.CommandButton
-    Set btnExample = pageToolDesign.Controls("btnExample")
-    ' Example: Show message (replace with your logic)
-    ' MsgBox "Example Button clicked!"
+    Dim frmScroll As MSForms.Frame
+    Set frmScroll = pageToolDesign.Controls("frmScroll")
+    
+    ' Collect all input values
+    Dim tdParams As New Collection
+    Dim selectedMode As String
+    
+    ' Get Tool Design Parameters
+    On Error Resume Next
+    tdParams.Add frmScroll.Controls("chkCreateNewProduct").Value, "createNewProduct"
+    tdParams.Add frmScroll.Controls("chkProtectRefs").Value, "protectRefs"
+    tdParams.Add frmScroll.Controls("chkAddSuffixToSel").Value, "addSuffixToSel"
+    tdParams.Add frmScroll.Controls("chkSeqOrSingle").Value, "seqOrSingle"
+    
+    ' Get selected traversal mode
+    selectedMode = frmScroll.Controls("cmbTraversalMode").Text
+    
+    ' Get traversal parameters based on mode
+    Select Case Left(selectedMode, InStr(selectedMode, " ") - 1)
+        Case "tmCollectByProperty"
+            tdParams.Add frmScroll.Controls("txtPropertyName").Text, "propName"
+            tdParams.Add frmScroll.Controls("txtPropertyValue").Text, "propValue"
+        Case "tmCollectByName"
+            tdParams.Add frmScroll.Controls("txtNameToMatch").Text, "nameToMatch"
+        Case "tmCollectByPartNumber"
+            tdParams.Add frmScroll.Controls("txtPartNumber").Text, "partNumber"
+        Case "tmCollectByCustomFilter"
+            tdParams.Add frmScroll.Controls("txtFilterFunc").Text, "filterFunc"
+        Case "tmAssignProductData"
+            Dim assignTypeText As String
+            assignTypeText = frmScroll.Controls("cmbAssignType").Text
+            Dim assignType As Long
+            ' Parse assign type from combo selection
+            If InStr(assignTypeText, "assignPN") > 0 Then assignType = 0
+            ElseIf InStr(assignTypeText, "assignName") > 0 Then assignType = 1
+            ElseIf InStr(assignTypeText, "assignDescription") > 0 Then assignType = 2
+            ElseIf InStr(assignTypeText, "assignReference") > 0 Then assignType = 3
+            ElseIf InStr(assignTypeText, "assignTemplate") > 0 Then assignType = 4
+            ElseIf InStr(assignTypeText, "assignSource") > 0 Then assignType = 5
+            ElseIf InStr(assignTypeText, "assignNomenclature") > 0 Then assignType = 6
+            ElseIf InStr(assignTypeText, "assignRevision") > 0 Then assignType = 7
+            ElseIf InStr(assignTypeText, "assignMaterial") > 0 Then assignType = 8
+            ElseIf InStr(assignTypeText, "assignColor") > 0 Then assignType = 9
+            ElseIf InStr(assignTypeText, "assignQuantity") > 0 Then assignType = 10
+            ElseIf InStr(assignTypeText, "assignCustomProperty") > 0 Then assignType = 11
+            ElseIf InStr(assignTypeText, "assignMass") > 0 Then assignType = 12
+            ElseIf InStr(assignTypeText, "assignVolume") > 0 Then assignType = 13
+            ElseIf InStr(assignTypeText, "assignDensity") > 0 Then assignType = 14
+            ElseIf InStr(assignTypeText, "assignManufacturer") > 0 Then assignType = 15
+            ElseIf InStr(assignTypeText, "assignProject") > 0 Then assignType = 16
+            Else assignType = 0
+            End If
+            tdParams.Add assignType, "assignType"
+            tdParams.Add frmScroll.Controls("txtAssignValue").Text, "value"
+        Case "tmLogTraversal"
+            tdParams.Add frmScroll.Controls("txtLogFilePath").Text, "logFilePath"
+        Case "tmSaveAsAll"
+            tdParams.Add frmScroll.Controls("txtNewName").Text, "newName"
+        Case "tmSendTo"
+            tdParams.Add frmScroll.Controls("txtDestination").Text, "destination"
+    End Select
+    On Error GoTo 0
+    
+    ' Call generateTD with the collected parameters
+    Dim toolDesignProduct As Product
+    
+    ' Get the active product from CATIA
+    On Error GoTo NoActiveProduct
+    Set toolDesignProduct = CATIA.ActiveDocument.Product
+    On Error GoTo 0
+    
+    If toolDesignProduct Is Nothing Then
+        MsgBox "No active product found. Please ensure a product document is active.", vbExclamation, "Error"
+        Exit Sub
+    End If
+    
+    ' Validate required inputs
+    If selectedMode = "" Then
+        MsgBox "Please select a traversal mode.", vbExclamation, "Input Required"
+        Exit Sub
+    End If
+    
+    ' Show confirmation with collected parameters
+    Dim msg As String
+    msg = "Ready to run Tool Design with the following parameters:" & vbCrLf & vbCrLf
+    msg = msg & "Create New Product: " & tdParams("createNewProduct") & vbCrLf
+    msg = msg & "Protect References: " & tdParams("protectRefs") & vbCrLf
+    msg = msg & "Add Suffix to Selection: " & tdParams("addSuffixToSel") & vbCrLf
+    msg = msg & "Sequential Processing: " & tdParams("seqOrSingle") & vbCrLf
+    msg = msg & "Traversal Mode: " & selectedMode & vbCrLf
+    
+    If MsgBox(msg & vbCrLf & "Continue?", vbYesNo + vbQuestion, "Confirm Tool Design") = vbYes Then
+        ' Call the generateTD subroutine
+        Call generateTD(toolDesignProduct, tdParams)
+        MsgBox "Tool Design generation completed!", vbInformation, "Success"
+    End If
+    Exit Sub
+    
+NoActiveProduct:
+    MsgBox "Error accessing active document. Please ensure a CATIA product document is open and active.", vbCritical, "CATIA Error"
+    Exit Sub
 End Sub
 
 
